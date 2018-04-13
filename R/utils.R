@@ -1,5 +1,4 @@
 library(xts)
-# library(zeallot)
 library(tidyr)
 library(dplyr)
 library(timetk)
@@ -20,7 +19,6 @@ make_yoy_xts <- function(df_xts) {
 make_yoy_ts <- function(df_ts) {
   new_ts <- diff.ts(df_ts, lag = 4)/lag.ts(df_xts, k = 4)
 }
-
 
 drop_this_vars <- function(df, vars_to_drop) {
   new_df <- df[!(names(df) %in% vars_to_drop)]

@@ -1,5 +1,6 @@
+source('./R/utils.R')
+
 library(xts)
-# library(zeallot)
 library(tidyr)
 library(dplyr)
 library(timetk)
