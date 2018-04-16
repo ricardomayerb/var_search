@@ -1,4 +1,4 @@
-source('R/one_var.R')
+source('./R/one_var.R')
 
 all_countries_tbl <- readRDS("data/all_countries_tidy_data_current.rds")
 
