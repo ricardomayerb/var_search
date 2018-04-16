@@ -16,26 +16,33 @@ library(stringr)
 # data_path <- "."
 data_path <- "./data/pre_r_data/"
 
-data_q_m_qm <- read_gather_qm_data(data_path = data_path)
-
-data_qm <- data_q_m_qm[["countries_merged_q_m"]]
-
-
-rgdp_dates <- map(data_qm, get_gdp_start_end)
-
+file_names <- list.files(path = data_path, recursive = T, pattern = '*.xlsx')
+file_paths <- paste0(data_path, file_names)
+country_names <- str_extract(file_names, "\\w+(?=\\.xlsx?)")
+names(file_paths) <- country_names
+names(file_names) <- country_names
 
 
-variables_to_drop <- c("year", "quarter", "hlookup", "rgdp_sa", "trim", "month",
-                       "conf_emp", "conf_ibre", "ip_ine", "vta_auto")
+general_variables_to_drop <- list(c("year", "quarter", "hlookup", "rgdp_sa", "trim", 
+                               "month", "conf_emp", "conf_ibre", "ip_ine", 
+                               "vta_auto", "exist"))
 
-list_v_to_drop <- rep(list(variables_to_drop), 10)
+extra_vars_to_drop <- list(Argentina = "", Bolivia = "igae", Brasil = "", 
+                           Chile = "", Colombia = "", Ecuador = "", Mexico = "",
+                           Paraguay = "", Peru = "", Uruguay = "cred")
+
+variables_to_drop <- map2(extra_vars_to_drop, 
+                          general_variables_to_drop, c)
+
+
 
 tictoc::tic()
 data_qm_xts <- get_gdp_shaped_data(data_path = data_path, 
-                                    list_variables_to_drop = list_v_to_drop,
+                                    list_variables_to_drop = variables_to_drop,
                                     only_complete_cases = TRUE)
+
 data_qm_xts_log <- get_gdp_shaped_data(data_path = data_path, 
-                                    list_variables_to_drop = list_v_to_drop,
+                                    list_variables_to_drop = variables_to_drop,
                                     only_complete_cases = TRUE,
                                     apply_log = TRUE)
 tictoc::toc()
@@ -45,7 +52,79 @@ foo <- data_qm_xts[[1]]
 moo <- log(foo)
 
 varhandle::inspect.na(moo)
- 
+
+# 
+# uru <- data_qm_xts[["Uruguay"]]
+# foo <- log(uru)
+# moo <- colSums(is.na(foo))
+# moo
+# 
+# data_q_m_qm <- read_gather_qm_data(data_path = data_path)
+# 
+# data_qm <- data_q_m_qm[["countries_merged_q_m"]]
+# 
+# 
+# rgdp_dates <- map(data_qm, get_gdp_start_end)
+
+
+
+# 
+# chile_3_offending_variables <-  chile_tbl %>% 
+#   filter(n_nas <= 3)
+# 
+# chile_2_offending_variables <-  chile_tbl %>% 
+#   filter(n_nas <= 2)
+# 
+# chile_1_offending_variables <-  chile_tbl %>% 
+#   filter(n_nas <= 1)
+# 
+# chile_0_offending_variables <-  chile_tbl %>% 
+#   filter(n_nas <= 0)
+# 
+# chile_3_nas <- inspect.na(as.data.frame(chile_3_offending_variables), barplot = FALSE)
+# chile_3_nas
+# chile_2_nas <- inspect.na(as.data.frame(chile_2_offending_variables), barplot = FALSE)
+# chile_2_nas
+# chile_1_nas <- inspect.na(as.data.frame(chile_1_offending_variables), barplot = FALSE)
+# chile_1_nas
+# 
+# nrow(chile_0_offending_variables)
+# nrow(chile_1_offending_variables)
+# nrow(chile_2_offending_variables)
+# nrow(chile_3_offending_variables)
+# 
+# print(as.character(chile_1_nas$column_name))
+# print(as.character(chile_2_nas$column_name))
+# print(as.character(chile_3_nas$column_name))
+# 
+# title <- c("cols_with_nas",  "n_obs", "start", "end")
+# info_0 <- paste0("if 0 vars remomve: starts at " , min(chile_0_offending_variables$index),
+#           ", ends at ", max(chile_0_offending_variables$index), ". N obs: ", 
+#           nrow(chile_0_offending_variables))
+# info_0
+# 
+# rna <- coo2 %>% coredata %>% is.na %>% rowSums
+# rna_xts <- xts(x = rna, order.by = index(coo2))
+# rna_xts
+# 
+# 
+# doo <- data_qm_xts[["Chile"]]
+# doo2 <- data_qm_xts2[["Chile"]]
+# 
+# foo <- coredata(chile_data_qm_xts2[[1]])
+# pin.na(foo)
+# inspect.na(foo)
+# 
+# inspect.na(as.data.frame(chile_data_qm2))
+# 
+# foo[, "n_nas"] <- rowSums(is.na(foo))
+# 
+# com_chile <- chile_tbl[complete.cases(chile_tbl), ]
+# com_chile_xts <- chile_xts[complete.cases(chile_xts), ]
+
+# 
+# 
+>>>>>>> ea503eb419066c01d378fbc73b27713973257426
 # 
 # start_year_argentina <- "2006 Q4"
 # start_year_bolivia <- "2005 Q3"
