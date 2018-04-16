@@ -1,34 +1,50 @@
+source('./R/utils.R')
 source('./R/one_var.R')
 
-all_countries_tbl <- readRDS("data/all_countries_tidy_data_current.rds")
 
+data_path <- "./data/pre_r_data/"
 
-country_name <- "Argentina"
+file_names <- list.files(path = data_path, recursive = T, pattern = '*.xlsx')
+file_paths <- paste0(data_path, file_names)
+country_names <- str_extract(file_names, "\\w+(?=\\.xlsx?)")
 
-this_country <- country_name
+general_variables_to_drop <- list(c("year", "quarter", "hlookup", "rgdp_sa", "trim", 
+                                    "month", "conf_emp", "conf_ibre", "ip_ine", 
+                                    "vta_auto", "exist"))
+# to make the data work we have to delete "m2" for argentina, "imp_int", "imp_k" for Ecuador and 
+# "imp_consumer", "imp_intermediate", "imp_capital" for Mexico
+extra_vars_to_drop <- list(Argentina = c("m2", "", ""), Bolivia = c("igae", "", ""), Brasil = c("", "", ""), 
+                           Chile = c("", "", ""), Colombia = c("", "", ""), Ecuador = c("imp_int", "imp_k", ""), 
+                           Mexico = c("imp_consumer", "imp_intermediate", "imp_capital"), Paraguay = c("", "", ""), 
+                           Peru = c("", "", ""), Uruguay = c("cred", "", ""))
 
-country_tbl <- all_countries_tbl[all_countries_tbl$id == this_country, ]
+variables_to_drop <- map2(extra_vars_to_drop, general_variables_to_drop, c)
 
-country_yoy_xts <- country_tbl[["yoy_q_all_xts"]][[1]]
-country_yoy_mts <- country_tbl[["yoy_q_all_mts"]][[1]]
+data_qm_xts_log <- get_gdp_shaped_data(data_path = data_path, 
+                                       list_variables_to_drop = variables_to_drop,
+                                       only_complete_cases = TRUE,
+                                       apply_log = TRUE)
 
-country_yoy_fd_xts <- country_tbl[["yoy_firstdiff_q_all_xts"]][[1]]
-country_yoy_fd_mts <- country_tbl[["yoy_firstdiff_q_all_mts"]][[1]]
+data_qm_xts_log_yoy <- map(data_qm_xts_log, make_yoy_xts)
+data_qm_xts_log_yoy_diff <- map(data_qm_xts_log_yoy, diff.xts, na.pad = FALSE)
+data_qm_mts_log_yoy_diff <- map(data_qm_xts_log_yoy_diff, to_ts_q)
 
-data_ts <- country_yoy_mts
-data_in_diff <- country_yoy_fd_mts
+data_qm_mts_log <- map(data_qm_xts_log_yoy, to_ts_q)
 
-# scaled_data_ts <- scale(data_ts)
-# scaled_data_in_diff <- scale(data_in_diff)
-# data_in_diff <- scaled_data_in_diff
+# OK countries: bol, bra, chl, col, par, per, ury
+# Singular CCM problems: arg, ecu, mex
 
+this_country_name <- "Paraguay"  
+this_country <- this_country_name
+data_ts <- data_qm_mts_log[[this_country]]
+data_in_diff <- data_qm_mts_log_yoy_diff[[this_country]]
 
 variable_names <- colnames(data_ts)
 ncolumns <- ncol(data_ts)
 
-
+this_bt <- 1
 vec_max_lags <- c(2, 3, 4, 5)
-vec_n_varsize <- c(3, 4, 5, 6)
+vec_n_varsize <- c(4, 5)
 n_best <- 5
 
 target_rgdp <- c("rgdp")
@@ -84,7 +100,7 @@ stata_dates <- list(stata_dates_1, stata_dates_2, stata_dates_3, stata_dates_4)
 
 dates_list <- stata_dates
 
-this_bt <- 1.7
+
 
 
 
@@ -165,9 +181,9 @@ total_vars_to_estimate <- sum(n_of_estimated_vars_vec)
 print(paste("Total number of VARs to estimate and test:", 
             total_vars_to_estimate))
 
-print(paste("Running time: approx.", total_vars_to_estimate/1000, "minutes."))
+print(paste("Running time: approx.", round(total_vars_to_estimate/1000, 1), "minutes."))
 
-
+# 
 # best_indiv_list <- search_over_ap_tset_lags_size_comb(
 #   ap_list = list_a_priori_groups, dates_list = stata_dates,
 #   lags_vec = vec_max_lags, target = target_rgdp, VAR_data = data_in_diff,

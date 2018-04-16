@@ -14,7 +14,7 @@ library(stringr)
 
 get_gdp_start_end <- function(data) {
   
-  na_omitted_rgdp  <- data %>% select(date, rgdp) %>% 
+  na_omitted_rgdp  <- data %>% dplyr::select(date, rgdp) %>% 
     filter(!is.na(rgdp)) %>% 
     summarise(start_rgdp_date = min(date), end_rgdp_date = max(date))
   
@@ -55,9 +55,15 @@ read_gather_qm_data <- function(data_path = "./data/pre_r_data/",
   
   for (i in seq_along(country_names)) {
 
-        this_q <- read_excel(file_paths[i], sheet = "quarterly")
+    this_q <- read_excel(file_paths[i], sheet = "quarterly")
     this_q <- as_tbl_time(this_q, index = date)
-    this_q <- select(this_q, -c(year, hlookup))
+    this_q <- dplyr::select(this_q, -c(year, hlookup))
+    
+    if(country_names[i] == "Uruguay") {
+      this_q[, "rm"] <- - this_q[, "rm"]
+    }
+      
+      
     all_files_q[[i]] <- this_q
     
     this_m <- read_excel(file_paths[i], sheet = "monthly")

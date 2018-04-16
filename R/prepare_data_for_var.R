@@ -16,43 +16,53 @@ library(stringr)
 # data_path <- "."
 data_path <- "./data/pre_r_data/"
 
-data_q_m_qm <- read_gather_qm_data(data_path = data_path)
-
-data_qm <- data_q_m_qm[["countries_merged_q_m"]]
-
-
-rgdp_dates <- map(data_qm, get_gdp_start_end)
-
+file_names <- list.files(path = data_path, recursive = T, pattern = '*.xlsx')
+file_paths <- paste0(data_path, file_names)
+country_names <- str_extract(file_names, "\\w+(?=\\.xlsx?)")
+names(file_paths) <- country_names
+names(file_names) <- country_names
 
 
-variables_to_drop <- c("year", "quarter", "hlookup", "rgdp_sa", "trim", "month",
-                       "conf_emp", "conf_ibre", "ip_ine", "vta_auto")
+general_variables_to_drop <- list(c("year", "quarter", "hlookup", "rgdp_sa", "trim", 
+                               "month", "conf_emp", "conf_ibre", "ip_ine", 
+                               "vta_auto", "exist"))
 
-list_v_to_drop <- rep(list(variables_to_drop), length(country_names))
+extra_vars_to_drop <- list(Argentina = "", Bolivia = "igae", Brasil = "", 
+                           Chile = "", Colombia = "", Ecuador = "", Mexico = "",
+                           Paraguay = "", Peru = "", Uruguay = "cred")
+
+variables_to_drop <- map2(extra_vars_to_drop, 
+                          general_variables_to_drop, c)
+
+# list_v_to_drop <- rep(list(variables_to_drop), length(country_names))
 
 tictoc::tic()
-data_qm_xts1 <- get_gdp_shaped_data(data_path = data_path, 
-                                    list_variables_to_drop = list_v_to_drop,
+data_qm_xts <- get_gdp_shaped_data(data_path = data_path, 
+                                    list_variables_to_drop = variables_to_drop,
                                     only_complete_cases = TRUE)
+
 data_qm_xts_log <- get_gdp_shaped_data(data_path = data_path, 
-                                    list_variables_to_drop = list_v_to_drop,
+                                    list_variables_to_drop = variables_to_drop,
                                     only_complete_cases = TRUE,
                                     apply_log = TRUE)
 tictoc::toc()
 
-foo <- map(data_qm_xts1, log)
 
-tictoc::tic()
-chile_data_qm_xts <- get_gdp_shaped_data(data_path = data_path, country = "Chile")
-chile_data_qm_xts2 <- map(chile_data_qm_xts, drop_this_vars, variables_to_drop)
-tictoc::toc()
+# 
+# uru <- data_qm_xts[["Uruguay"]]
+# foo <- log(uru)
+# moo <- colSums(is.na(foo))
+# moo
+# 
+# data_q_m_qm <- read_gather_qm_data(data_path = data_path)
+# 
+# data_qm <- data_q_m_qm[["countries_merged_q_m"]]
+# 
+# 
+# rgdp_dates <- map(data_qm, get_gdp_start_end)
 
-coo <- chile_data_qm_xts[[1]]
-coo2 <- chile_data_qm_xts2[[1]]
 
-chile_xts <- chile_data_qm_xts2[[1]]
-chile_tbl <- tk_tbl(chile_xts) %>% 
-  mutate(n_nas = rowSums(is.na(.))) 
+
 # 
 # chile_3_offending_variables <-  chile_tbl %>% 
 #   filter(n_nas <= 3)
