@@ -28,10 +28,10 @@ rgdp_dates <- map(data_qm, get_gdp_start_end)
 variables_to_drop <- c("year", "quarter", "hlookup", "rgdp_sa", "trim", "month",
                        "conf_emp", "conf_ibre", "ip_ine", "vta_auto")
 
-list_v_to_drop <- rep(list(variables_to_drop), length(country_names))
+list_v_to_drop <- rep(list(variables_to_drop), 10)
 
 tictoc::tic()
-data_qm_xts1 <- get_gdp_shaped_data(data_path = data_path, 
+data_qm_xts <- get_gdp_shaped_data(data_path = data_path, 
                                     list_variables_to_drop = list_v_to_drop,
                                     only_complete_cases = TRUE)
 data_qm_xts_log <- get_gdp_shaped_data(data_path = data_path, 
@@ -40,75 +40,12 @@ data_qm_xts_log <- get_gdp_shaped_data(data_path = data_path,
                                     apply_log = TRUE)
 tictoc::toc()
 
-foo <- map(data_qm_xts1, log)
+foo <- data_qm_xts[[1]]
 
-tictoc::tic()
-chile_data_qm_xts <- get_gdp_shaped_data(data_path = data_path, country = "Chile")
-chile_data_qm_xts2 <- map(chile_data_qm_xts, drop_this_vars, variables_to_drop)
-tictoc::toc()
+moo <- log(foo)
 
-coo <- chile_data_qm_xts[[1]]
-coo2 <- chile_data_qm_xts2[[1]]
-
-chile_xts <- chile_data_qm_xts2[[1]]
-chile_tbl <- tk_tbl(chile_xts) %>% 
-  mutate(n_nas = rowSums(is.na(.))) 
-# 
-# chile_3_offending_variables <-  chile_tbl %>% 
-#   filter(n_nas <= 3)
-# 
-# chile_2_offending_variables <-  chile_tbl %>% 
-#   filter(n_nas <= 2)
-# 
-# chile_1_offending_variables <-  chile_tbl %>% 
-#   filter(n_nas <= 1)
-# 
-# chile_0_offending_variables <-  chile_tbl %>% 
-#   filter(n_nas <= 0)
-# 
-# chile_3_nas <- inspect.na(as.data.frame(chile_3_offending_variables), barplot = FALSE)
-# chile_3_nas
-# chile_2_nas <- inspect.na(as.data.frame(chile_2_offending_variables), barplot = FALSE)
-# chile_2_nas
-# chile_1_nas <- inspect.na(as.data.frame(chile_1_offending_variables), barplot = FALSE)
-# chile_1_nas
-# 
-# nrow(chile_0_offending_variables)
-# nrow(chile_1_offending_variables)
-# nrow(chile_2_offending_variables)
-# nrow(chile_3_offending_variables)
-# 
-# print(as.character(chile_1_nas$column_name))
-# print(as.character(chile_2_nas$column_name))
-# print(as.character(chile_3_nas$column_name))
-# 
-# title <- c("cols_with_nas",  "n_obs", "start", "end")
-# info_0 <- paste0("if 0 vars remomve: starts at " , min(chile_0_offending_variables$index),
-#           ", ends at ", max(chile_0_offending_variables$index), ". N obs: ", 
-#           nrow(chile_0_offending_variables))
-# info_0
-# 
-# rna <- coo2 %>% coredata %>% is.na %>% rowSums
-# rna_xts <- xts(x = rna, order.by = index(coo2))
-# rna_xts
-# 
-# 
-# doo <- data_qm_xts[["Chile"]]
-# doo2 <- data_qm_xts2[["Chile"]]
-# 
-# foo <- coredata(chile_data_qm_xts2[[1]])
-# pin.na(foo)
-# inspect.na(foo)
-# 
-# inspect.na(as.data.frame(chile_data_qm2))
-# 
-# foo[, "n_nas"] <- rowSums(is.na(foo))
-# 
-# com_chile <- chile_tbl[complete.cases(chile_tbl), ]
-# com_chile_xts <- chile_xts[complete.cases(chile_xts), ]
-
-# 
-# 
+varhandle::inspect.na(moo)
+ 
 # 
 # start_year_argentina <- "2006 Q4"
 # start_year_bolivia <- "2005 Q3"
