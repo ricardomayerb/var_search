@@ -12,6 +12,60 @@ library(purrr)
 library(stringr)
 
 
+make_test_dates_list <- function(ts_data, type = "tscv", n = 8, h_max = 6,
+                                 timetk_idx = TRUE) {
+  
+  data_length <- nrow(ts_data)
+  data_time_index <- tk_index(ts_data, timetk_idx = timetk_idx)
+  
+  list_of_positions <- list_along(seq(1:n))
+  list_of_dates <- list_along(seq(1:n))
+  list_of_year_quarter <- list_along(seq(1:n))
+  
+  if (type == "tscv") {
+    
+    for (i in seq.int(1:n)) {
+
+      from_the_right <-  i - 1
+      
+      end_test_pos <- data_length - from_the_right
+      start_test_pos <- end_test_pos - h_max 
+      end_training_pos <- start_test_pos - 1
+      start_training_pos <- end_training_pos + 1
+      
+
+      end_test_date <- date_time_index[end_test_pos]
+      start_test_date <- date_time_index[start_test_pos] 
+      end_training_date <- date_time_index[end_training_pos]
+      start_training_date <- date_time_index[start_training_pos]
+      
+      end_test_year <- year(end_test_date)
+      start_test_year <- year(start_test_date) 
+      end_training_year <- year(end_training_date) 
+      start_training_year <- year(start_training_date)
+      
+      end_test_quarter <- quarter(end_test_date)
+      start_test_quarter <- quarter(start_test_date) 
+      end_training_quarter <- quarter(end_training_date) 
+      start_training_quarter <- quarter(start_training_date)
+      
+      this_pos <- list(
+        tra_s = start_training_pos, tra_e = end_training_pos,
+        tes_s = start_test_pos, tes_e = end_test_pos)
+      
+      this_date <- list(
+        tra_s = start_training_date, tra_e = end_training_date,
+        tes_s = start_test_date, tes_e = end_test_date)
+      
+      
+    }
+    
+    
+  }
+  
+  
+}
+
 get_gdp_start_end <- function(data) {
   
   na_omitted_rgdp  <- data %>% dplyr::select(date, rgdp) %>% 
