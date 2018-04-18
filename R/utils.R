@@ -13,7 +13,7 @@ library(stringr)
 
 
 make_test_dates_list <- function(ts_data, type = "tscv", n = 8, h_max = 6,
-                                 timetk_idx = TRUE) {
+                                 timetk_idx = TRUE, training_length = 16) {
   
   data_length <- nrow(ts_data)
   data_time_index <- tk_index(ts_data, timetk_idx = timetk_idx)
@@ -31,7 +31,7 @@ make_test_dates_list <- function(ts_data, type = "tscv", n = 8, h_max = 6,
       end_test_pos <- data_length - from_the_right
       start_test_pos <- end_test_pos - h_max 
       end_training_pos <- start_test_pos - 1
-      start_training_pos <- end_training_pos + 1
+      start_training_pos <- end_training_pos - training_length + 1
       
 
       end_test_date <- date_time_index[end_test_pos]
@@ -50,12 +50,23 @@ make_test_dates_list <- function(ts_data, type = "tscv", n = 8, h_max = 6,
       start_training_quarter <- quarter(start_training_date)
       
       this_pos <- list(
-        tra_s = start_training_pos, tra_e = end_training_pos,
-        tes_s = start_test_pos, tes_e = end_test_pos)
+        tra_s = start_training_pos, 
+        tra_e = end_training_pos,
+        tes_s = start_test_pos, 
+        tes_e = end_test_pos)
       
       this_date <- list(
-        tra_s = start_training_date, tra_e = end_training_date,
-        tes_s = start_test_date, tes_e = end_test_date)
+        tra_s = start_training_date, 
+        tra_e = end_training_date,
+        tes_s = start_test_date, 
+        tes_e = end_test_date)
+      
+      this_yq <- list(
+        tra_s = c(start_training_year, start_training_quarter),
+        tra_e = c(end_training_year, end_training_quarter),
+        tes_s = c(start_test_year, start_test_quarter),
+        tes_e = c(end_test_year, end_test_quarter)
+        )
       
       
     }
