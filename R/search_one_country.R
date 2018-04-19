@@ -1,7 +1,5 @@
+source('./R/utils_vars.R')
 source('./R/one_var.R')
-source('./R/utils.R')
-
-
 
 data_path <- "./data/pre_r_data/"
 
@@ -35,7 +33,7 @@ data_qm_mts_log <- map(data_qm_xts_log_yoy, to_ts_q)
 # OK countries: bol, bra, chl, col, par, per, ury
 # Singular CCM problems: arg, ecu, mex
 
-this_country_name <- "Paraguay"  
+this_country_name <- "Uruguay"  
 this_country <- this_country_name
 data_ts <- data_qm_mts_log[[this_country]]
 data_in_diff <- data_qm_mts_log_yoy_diff[[this_country]]
@@ -54,52 +52,56 @@ list_a_priori_groups <- list("rpc")
 # Periods covered Pseudo Out of Sample Exercise:
 # 1) 2013q2 – 2014q3, 2) 2013q4 – 2015q1, 3) 2014q4 – 2016q1, 4) 2015q4 – 2016q4 f bvo890
 
+# 
+# ## train-test period 1
+# train_start_1 <- c(2004, 2)
+# train_end_1 <- c(2013, 1)
+# test_start_1 <- c(2013, 2)
+# test_end_1 <- c(2014, 3)
+# 
+# ## train-test period 2
+# train_start_2 <- c(2004, 2)
+# train_end_2 <- c(2013, 3)
+# test_start_2 <- c(2013, 4)
+# test_end_2 <- c(2015, 1)
+# 
+# ## train-test period 3
+# train_start_3 <- c(2004, 2)
+# train_end_3 <- c(2014, 3)
+# test_start_3 <- c(2014, 4)
+# test_end_3 <- c(2016, 1)
+# 
+# ## train-test period 4
+# train_start_4 <- c(2004, 2)
+# train_end_4 <- c(2015, 3)
+# test_start_4 <- c(2015, 4)
+# test_end_4 <- c(2016, 4)
+# 
+# 
+# 
+# stata_dates_1 <- list(
+#   tra_s = train_start_1, tra_e = train_end_1,
+#   tes_s = test_start_1, tes_e = test_end_1)
+# 
+# stata_dates_2 <- list(
+#   tra_s = train_start_2, tra_e = train_end_2,
+#   tes_s = test_start_2, tes_e = test_end_2)
+# 
+# stata_dates_3 <- list(
+#   tra_s = train_start_3, tra_e = train_end_3,
+#   tes_s = test_start_3, tes_e = test_end_3)
+# 
+# stata_dates_4 <- list(
+#   tra_s = train_start_4, tra_e = train_end_4,
+#   tes_s = test_start_4, tes_e = test_end_4)
+# 
+# stata_dates <- list(stata_dates_1, stata_dates_2, stata_dates_3, stata_dates_4)
+# date_time_index <- tk_index(data_in_diff, timetk_idx = TRUE)
 
-## train-test period 1
-train_start_1 <- c(2004, 2)
-train_end_1 <- c(2013, 1)
-test_start_1 <- c(2013, 2)
-test_end_1 <- c(2014, 3)
 
-## train-test period 2
-train_start_2 <- c(2004, 2)
-train_end_2 <- c(2013, 3)
-test_start_2 <- c(2013, 4)
-test_end_2 <- c(2015, 1)
-
-## train-test period 3
-train_start_3 <- c(2004, 2)
-train_end_3 <- c(2014, 3)
-test_start_3 <- c(2014, 4)
-test_end_3 <- c(2016, 1)
-
-## train-test period 4
-train_start_4 <- c(2004, 2)
-train_end_4 <- c(2015, 3)
-test_start_4 <- c(2015, 4)
-test_end_4 <- c(2016, 4)
-
-
-
-stata_dates_1 <- list(
-  tra_s = train_start_1, tra_e = train_end_1,
-  tes_s = test_start_1, tes_e = test_end_1)
-
-stata_dates_2 <- list(
-  tra_s = train_start_2, tra_e = train_end_2,
-  tes_s = test_start_2, tes_e = test_end_2)
-
-stata_dates_3 <- list(
-  tra_s = train_start_3, tra_e = train_end_3,
-  tes_s = test_start_3, tes_e = test_end_3)
-
-stata_dates_4 <- list(
-  tra_s = train_start_4, tra_e = train_end_4,
-  tes_s = test_start_4, tes_e = test_end_4)
-
-stata_dates <- list(stata_dates_1, stata_dates_2, stata_dates_3, stata_dates_4)
-
-dates_list <- stata_dates
+  
+dates_list <- make_test_dates_list(ts_data = data_in_diff, type = "tscv", n = 8, h_max = 6, training_length = 20,
+                                   timetk_idx = TRUE) 
 
 
 
@@ -184,11 +186,11 @@ print(paste("Total number of VARs to estimate and test:",
 
 print(paste("Running time: approx.", round(total_vars_to_estimate/1000, 1), "minutes."))
 
-# 
-# best_indiv_list <- search_over_ap_tset_lags_size_comb(
-#   ap_list = list_a_priori_groups, dates_list = stata_dates,
-#   lags_vec = vec_max_lags, target = target_rgdp, VAR_data = data_in_diff,
-#   this_id = "new_func", bt = this_bt, sizes_vec = vec_n_varsize, n_best = n_best
-# )
+
+best_indiv_list <- search_over_ap_tset_lags_size_comb(
+  ap_list = list_a_priori_groups, dates_list = dates_list,
+  lags_vec = vec_max_lags, target = target_rgdp, VAR_data = data_in_diff,
+  this_id = "new_func", bt = this_bt, sizes_vec = vec_n_varsize, n_best = n_best
+)
 
 
