@@ -1,5 +1,6 @@
-source('./R/utils.R')
 source('./R/one_var.R')
+source('./R/utils.R')
+
 
 
 data_path <- "./data/pre_r_data/"
@@ -189,4 +190,5 @@ print(paste("Running time: approx.", round(total_vars_to_estimate/1000, 1), "min
 #   lags_vec = vec_max_lags, target = target_rgdp, VAR_data = data_in_diff,
 #   this_id = "new_func", bt = this_bt, sizes_vec = vec_n_varsize, n_best = n_best
 # )
+
 

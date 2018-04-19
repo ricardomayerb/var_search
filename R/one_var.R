@@ -261,7 +261,8 @@ search_for_VARs <- function(VAR_data, target_variables = "rgdp",
 
   return(list(
     top_n_mods = top_n_mods, inputs_n = inputs_n,
-    ferr_rank_n = ferr_rank_n
+    ferr_rank_n = ferr_rank_n,
+    all_results = all_results
   ))
 }
 
