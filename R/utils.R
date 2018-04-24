@@ -13,10 +13,16 @@ library(stringr)
 
 
 make_test_dates_list <- function(ts_data, type = "tscv", n = 8, h_max = 6,
-                                 timetk_idx = TRUE, training_length = 16) {
+                                 timetk_idx = TRUE, training_length = 16,
+                                 external_idx = NULL) {
   
   data_length <- nrow(ts_data)
-  data_time_index <- tk_index(ts_data, timetk_idx = timetk_idx)
+  if (timetk_idx) {
+    data_time_index <- tk_index(ts_data, timetk_idx = timetk_idx)
+  } else {
+    data_time_index <- external_idx
+  }
+  
   
   list_of_positions <- list_along(seq(1:n))
   list_of_dates <- list_along(seq(1:n))
@@ -31,7 +37,7 @@ make_test_dates_list <- function(ts_data, type = "tscv", n = 8, h_max = 6,
       end_test_pos <- data_length - from_the_right
       start_test_pos <- end_test_pos - h_max 
       end_training_pos <- start_test_pos - 1
-      start_training_pos <- end_training_pos - training_length + 1
+      start_training_pos <- end_training_pos - training_length
       
 
       end_test_date <- date_time_index[end_test_pos]
