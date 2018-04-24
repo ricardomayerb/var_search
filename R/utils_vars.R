@@ -12,12 +12,18 @@ library(purrr)
 library(stringr)
 
 
-make_test_dates_list <- function(ts_data, type = "tscv", n = 8, h_max = 6, training_length,
-                                 timetk_idx = TRUE) {
+make_test_dates_list <- function(ts_data, type = "tscv", n = 8, h_max = 6,
+                                 timetk_idx = TRUE, training_length = 20,
+                                 external_idx = NULL) {
   
   data_length <- nrow(ts_data)
-  date_time_index <- tk_index(ts_data, timetk_idx = timetk_idx)
   
+  if (timetk_idx) {
+    date_time_index <- tk_index(ts_data, timetk_idx = timetk_idx)
+  } else {
+    date_time_index <- external_idx
+  }
+
   list_of_positions <- list_along(seq(1:n))
   list_of_dates <- list_along(seq(1:n))
   list_of_year_quarter <- list_along(seq(1:n))
@@ -65,18 +71,18 @@ make_test_dates_list <- function(ts_data, type = "tscv", n = 8, h_max = 6, train
         tra_s = c(start_training_year, start_training_quarter),
         tra_e = c(end_training_year, end_training_quarter),
         tes_s = c(start_test_year, start_test_quarter),
-        tes_e = c(end_test_year, end_test_quarter))
+        tes_e = c(end_test_year, end_test_quarter)
+        )
       
       list_of_year_quarter[[i]] <- this_yq
       
-      
-      
     }
     
+    return(list_of_year_quarter)
     
   }
   
-  return(list_of_year_quarter)
+  
 }
 
 get_gdp_start_end <- function(data) {

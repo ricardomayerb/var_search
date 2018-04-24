@@ -1,5 +1,5 @@
-source('./R/var_functions.R')
 source('./R/utils_vars.R')
+source('./R/var_functions.R')
 
 
 
@@ -52,7 +52,10 @@ target_rgdp <- c("rgdp")
 # list_a_priori_groups <- list("rpc")
 vec_a_priori_variables <- c("rpc")
 
-dates_list <- make_test_dates_list(ts_data = data_in_diff, type = "tscv", n = 8, h_max = 6, training_length = 20,
+timetk::has_timetk_idx(data_in_diff)
+
+dates_list <- make_test_dates_list(ts_data = data_in_diff, type = "tscv", n = 8,
+                                   h_max = 6, training_length = 20,
                                    timetk_idx = TRUE) 
 
 # preview the number of models to evaluate given current choices
@@ -68,9 +71,10 @@ this_tes_e <- dates_list[[1]]$tes_e
 
 mock_all_vars <- c("rgdp", "rpc", "tot", "imp", "exp", "ip", "m1")
 
-loop_size_vbls_lag(vec_size = vec_n_varsize, vec_lags = vec_max_lags,
+var_res <- try_sizes_vbls_lags(vec_size = vec_n_varsize, vec_lags = vec_max_lags,
                    var_data = data_in_diff, target_v = target_rgdp,
-                   pre_selected_v = vec_a_priori_variables, is_cv = FALSE)
+                   pre_selected_v = vec_a_priori_variables, is_cv = TRUE,
+                   h_max = 5)
 
 # res_one_var <- one_var(varnames = this_var_names, VAR_data = data_in_diff, 
 #                        thislag = 2, training_set_start_date = this_tra_s,
