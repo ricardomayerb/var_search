@@ -47,8 +47,8 @@ var_cv <- function(var_data, this_p, this_type = "const", n_cv = 8, h_max = 6,
                          start = this_tra_s,
                          end = this_tra_e)
     
-    print("nrow(training_y)")
-    print(nrow(training_y))
+    # print("nrow(training_y)")
+    # print(nrow(training_y))
     
     training_rgdp <- training_y[ , "rgdp"]
     

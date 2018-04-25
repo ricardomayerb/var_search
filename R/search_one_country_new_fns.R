@@ -71,9 +71,9 @@ this_tes_e <- dates_list[[1]]$tes_e
 
 mock_all_vars <- c("rgdp", "rpc", "tot", "imp", "exp", "ip", "m1")
 
-train_span <- 20
-number_of_cv <- 8
-fc_horizon <- 6
+train_span <- 30
+number_of_cv <- 4
+fc_horizon <- 3
 
 var_res <- try_sizes_vbls_lags(vec_size = vec_n_varsize, 
                                vec_lags = vec_max_lags,
@@ -84,39 +84,12 @@ var_res <- try_sizes_vbls_lags(vec_size = vec_n_varsize,
                               training_length = train_span,
                               h_max = fc_horizon, n_cv = number_of_cv)
 
-cv_marks <-  make_test_dates_list(ts_data = data_in_diff, n = number_of_cv,
-                                  h_max = fc_horizon, training_length = train_span)
-
-cv_dates <- cv_marks[["list_of_dates"]]
-cv_pos <- cv_marks[["list_of_positions"]]
-cv_yq <- cv_marks[["list_of_year_quarter"]]
-
-training_end_pos <- map(cv_pos, "tra_e")
-training_end_dates <- map(cv_dates, "tra_e")
-training_end_yq <- map(cv_yq, "tra_e")
-
-get_last_training_obs <- function(this_data_ts, list_yq) {
-  
-  cv_last_tra_obs <- list_along(list_yq)
-  
-  for (i in seq_along(list_yq)) {
-    this_yq <- list_yq[[i]]
-    
-    this_obs <- window(this_data_ts, start = this_yq, end = this_yq)
-    cv_last_tra_obs[[i]] <- this_obs[, "rgdp"]
-  }
-  return(cv_last_tra_obs)
-} 
-
-cv_rgdp_lev <- get_last_training_obs(data_ts, training_end_yq)
+cv_fcs <- var_res$cv_fcs
 
 
-# 
-# back_from_diff_in_cv <- function(lev_ts, diff_ts, n){
-#   
-# }
-
-
-# foo <- var_res %>% 
+undiff_stuff <- cv_obs_fc_back_from_diff(lev_ts = data_ts, diff_ts = data_in_diff,
+                                training_length = train_span,
+                                n_cv = number_of_cv, h_max = fc_horizon,
+                                cv_fcs_one_model = cv_fcs[[1]])
 
 
