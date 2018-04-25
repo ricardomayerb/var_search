@@ -11,6 +11,13 @@ library(tibbletime)
 library(purrr)
 library(stringr)
 
+fcs_accu <- function(fc_mat, test_data_mat) {
+  
+  errors_mat <- test_data_mat - fc_mat
+  rmse_vec <- sqrt(colMeans(errors_mat^2))
+  mean_rmse <- mean(rmse_vec)
+  return(mean_rmse)
+}
 
 make_test_dates_list <- function(ts_data, type = "tscv", n = 8, h_max = 6,
                                  timetk_idx = TRUE, training_length = 20,
@@ -74,11 +81,17 @@ make_test_dates_list <- function(ts_data, type = "tscv", n = 8, h_max = 6,
         tes_e = c(end_test_year, end_test_quarter)
         )
       
+      list_of_positions[[i]] <- this_pos
+      list_of_dates[[i]] <- this_date
       list_of_year_quarter[[i]] <- this_yq
       
     }
     
-    return(list_of_year_quarter)
+    return(list(
+      list_of_year_quarter = list_of_year_quarter,
+      list_of_dates = list_of_dates,
+      list_of_positions = list_of_positions)
+    )
     
   }
   

@@ -27,24 +27,26 @@ data_qm_xts_log <- get_gdp_shaped_data(data_path = data_path,
                                        apply_log = TRUE)
 
 data_qm_xts_log_yoy <- map(data_qm_xts_log, make_yoy_xts)
+data_qm_mts_log_yoy <- map(data_qm_xts_log_yoy, to_ts_q)
+
 data_qm_xts_log_yoy_diff <- map(data_qm_xts_log_yoy, diff.xts, na.pad = FALSE)
 data_qm_mts_log_yoy_diff <- map(data_qm_xts_log_yoy_diff, to_ts_q)
 
-data_qm_mts_log <- map(data_qm_xts_log_yoy, to_ts_q)
+
 
 # OK countries: bol, bra, chl, col, par, per, ury
 # Singular CCM problems: arg, ecu, mex
 
 this_country_name <- "Uruguay"  
 this_country <- this_country_name
-data_ts <- data_qm_mts_log[[this_country]]
+data_ts <- data_qm_mts_log_yoy[[this_country]]
 data_in_diff <- data_qm_mts_log_yoy_diff[[this_country]]
 
 variable_names <- colnames(data_ts)
 ncolumns <- ncol(data_ts)
 
 this_bt <- 1
-vec_max_lags <- c(2, 3)
+vec_max_lags <- c(2, 3, 4, 5)
 vec_n_varsize <- c(3, 4)
 n_best <- 5
 
@@ -55,13 +57,13 @@ vec_a_priori_variables <- c("rpc")
 timetk::has_timetk_idx(data_in_diff)
 
 dates_list <- make_test_dates_list(ts_data = data_in_diff, type = "tscv", n = 8,
-                                   h_max = 6, training_length = 20,
+                                   h_max = 2, training_length = 32,
                                    timetk_idx = TRUE) 
 
 # preview the number of models to evaluate given current choices
 # print(paste("Running time: approx.", round(total_vars_to_estimate/1000, 1), "minutes."))
 
-this_var_names <- c("rgdp", "rpc", "manuf")
+# this_var_names <- c("rgdp", "rpc", "manuf")
 
 this_tra_s <- dates_list[[1]]$tra_s
 this_tra_e <- dates_list[[1]]$tra_e
@@ -76,37 +78,40 @@ var_res <- try_sizes_vbls_lags(vec_size = vec_n_varsize, vec_lags = vec_max_lags
                    pre_selected_v = vec_a_priori_variables, is_cv = TRUE,
                    h_max = 3, n_cv = 4)
 
-onecv <- var_res[[1]][[1]][[1]]
 
-multi_h_accuracy <- function(df_fc, df_x) {
+
+
+
+
+
+
+cv_marks <-  make_test_dates_list(ts_data = data_in_diff, n = 4)
+
+cv_dates <- cv_marks[["list_of_dates"]]
+cv_pos <- cv_marks[["list_of_positions"]]
+cv_yq <- cv_marks[["list_of_year_quarter"]]
+
+training_end_pos <- map(cv_pos, "tra_e")
+training_end_dates <- map(cv_dates, "tra_e")
+training_end_yq <- map(cv_yq, "tra_e")
+
+get_last_training_obs <- function(this_data_ts, list_yq) {
   
-}
+  cv_last_tra_obs <- list_along(list_yq)
+  
+  for (i in seq_along(list_yq)) {
+    this_yq <- list_yq[[i]]
+    
+    this_obs <- window(this_data_ts, start = this_yq, end = this_yq)
+    cv_last_tra_obs[[i]] <- this_obs[, "rgdp"]
+  }
+  return(cv_last_tra_obs)
+} 
+
+cv_rgdp_lev <- get_last_training_obs(data_ts, training_end_yq)
 
 
 
-# res_one_var <- one_var(varnames = this_var_names, VAR_data = data_in_diff, 
-#                        thislag = 2, training_set_start_date = this_tra_s,
-#                        training_set_end_date = this_tra_e,
-#                        test_set_start_date = this_tes_s, 
-#                        test_set_end_date = this_tes_e,
-#                        use_dates = TRUE
-#                       )
-# 
-# 
-# 
-# 
-# # 
-# # (varnames, VAR_data, thislag = 3, f_horizons = c(3, 7),
-# #   start_training_set_index = NULL, last_training_index = NULL,
-# #   test_set_nobs = NULL, training_set_start_date = NULL,
-# #   training_set_end_date = NULL, test_set_start_date = NULL,
-# #   test_set_end_date = NULL, use_dates = FALSE,
-# #   return_forecast_object = TRUE) 
-# 
-# 
-# best_indiv_list <- search_over_ap_tset_lags_size_comb(
-#   ap_list = list_a_priori_groups, dates_list = dates_list,
-#   lags_vec = vec_max_lags, target = target_rgdp, VAR_data = data_in_diff,
-#   this_id = "new_func", bt = this_bt, sizes_vec = vec_n_varsize, n_best = n_best
-# )
+# foo <- var_res %>% 
+
 
