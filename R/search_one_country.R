@@ -193,11 +193,5 @@ best_indiv_list <- search_over_ap_tset_lags_size_comb(
   this_id = "new_func", bt = this_bt, sizes_vec = vec_n_varsize, n_best = n_best
 )
 
-<<<<<<< HEAD
-all_results <- best_indiv_list[[2]][[1]][["all_results"]]
 
-all_results[[1]][["results_top_n"]][[1]][["all_results"]][[1]][["fc_Q"]]
-
-=======
->>>>>>> 59ca402f796d29734d5e27f057604f9acb744dab
 
