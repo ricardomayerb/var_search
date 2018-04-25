@@ -30,14 +30,15 @@ var_cv <- function(var_data, this_p, this_type = "const", n_cv = 8, h_max = 6,
   cv_errors <- list_along(1:n_cv)
   cv_test_data <- list_along(1:n_cv)
   cv_fcs <- list_along(1:n_cv)
+  cv_accuracy <- list_along(1:n_cv)
   
   for (i in seq_along(1:n_cv)) {
     
-    this_tra_s <- train_test_dates[[1]]$tra_s
-    this_tra_e <- train_test_dates[[1]]$tra_e
+    this_tra_s <- train_test_dates[[i]]$tra_s
+    this_tra_e <- train_test_dates[[i]]$tra_e
     
-    this_tes_s <- train_test_dates[[1]]$tes_s
-    this_tes_e <- train_test_dates[[1]]$tes_e
+    this_tes_s <- train_test_dates[[i]]$tes_s
+    this_tes_e <- train_test_dates[[i]]$tes_e
     
 
     # the commented block uses index-postions and subset
@@ -54,22 +55,11 @@ var_cv <- function(var_data, this_p, this_type = "const", n_cv = 8, h_max = 6,
                          start = this_tra_s,
                          end = this_tra_e)
     
-    
-    
-    print("nrow(training_y)")
-    print(nrow(training_y))
-    
     test_y <- window(var_data, 
                      start = this_tes_s,
                      end = this_tes_e)
-    
-    print("nrow(test_y)")
-    print(nrow(test_y))
-    
+
     test_rgdp <- test_y[ , "rgdp"]
-    
-    print(this_p)
-    print(this_type)
     
     this_var <- VAR(y = training_y, p = this_p, type = this_type) 
 
@@ -77,16 +67,20 @@ var_cv <- function(var_data, this_p, this_type = "const", n_cv = 8, h_max = 6,
     
     this_rgdp_fc_mean <- this_fc[["forecast"]][["rgdp"]][["mean"]]
 
-    
     fc_error <- test_rgdp - this_rgdp_fc_mean
     
     cv_errors[[i]] <- fc_error
+    # cv_accuracy[[i]] <- accuracy(f = this_rgdp_fc_mean, x = test_rgdp) 
     cv_test_data[[i]] <- test_rgdp
     cv_fcs[[i]] <- this_rgdp_fc_mean
     
   }
   
   cv_errors <- reduce(cv_errors, rbind)
+  cv_test_data <- reduce(cv_test_data, rbind)
+  cv_fcs <- reduce(cv_fcs, rbind)
+  # cv_accuracy <- reduce(cv_accuracy, rbind)
+  
   
   return(list(cv_errors = cv_errors,
               cv_test_data = cv_test_data,
@@ -97,7 +91,7 @@ var_cv <- function(var_data, this_p, this_type = "const", n_cv = 8, h_max = 6,
 
 try_sizes_vbls_lags <- function(var_data, target_v, vec_size = c(3,4,5), 
                                 vec_lags = c(1,2,3,4), pre_selected_v = "",
-                               is_cv = FALSE, h_max = 6) {
+                               is_cv = FALSE, h_max = 6, n_cv = 8) {
   
   # print("in try_sizes_vbls_lags, has_timetk_idx(var_data)")
   # print(has_timetk_idx(var_data))
@@ -164,23 +158,20 @@ try_sizes_vbls_lags <- function(var_data, target_v, vec_size = c(3,4,5),
         # print("colnames(sub_data) : ")
         # print(colnames(sub_data))
         
-        print("in k loop , has_timetk_idx(var_data)")
-        print(has_timetk_idx(var_data))
-        print("in k loop , has_timetk_idx(sub_data)")
-        print(has_timetk_idx(sub_data))
-        print(class(sub_data))
-        
         sub_data_tk_index <- tk_index(var_data, timetk_idx = TRUE)
         
         # this_var_obj <- vars::VAR(y = sub_data, p = this_lag, type = "const")
         
         this_cv <- var_cv(var_data = sub_data, timetk_idx = FALSE,
                           external_idx = sub_data_tk_index, this_p = this_lag,
-                          this_type = "const", h_max = h_max)
+                          this_type = "const", h_max = h_max,
+                          n_cv = n_cv)
         
-        this_var_obj <- this_cv
+        # this_var_obj <- this_cv
         
-        var_fixed_size_fixed_vset_all_lags[[k]] <- this_var_obj
+        var_fixed_size_fixed_vset_all_lags[[k]] <- this_cv
+        
+        # print(this_cv)
         
       }
       

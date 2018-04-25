@@ -74,7 +74,15 @@ mock_all_vars <- c("rgdp", "rpc", "tot", "imp", "exp", "ip", "m1")
 var_res <- try_sizes_vbls_lags(vec_size = vec_n_varsize, vec_lags = vec_max_lags,
                    var_data = data_in_diff, target_v = target_rgdp,
                    pre_selected_v = vec_a_priori_variables, is_cv = TRUE,
-                   h_max = 5)
+                   h_max = 3, n_cv = 4)
+
+onecv <- var_res[[1]][[1]][[1]]
+
+multi_h_accuracy <- function(df_fc, df_x) {
+  
+}
+
+
 
 # res_one_var <- one_var(varnames = this_var_names, VAR_data = data_in_diff, 
 #                        thislag = 2, training_set_start_date = this_tra_s,

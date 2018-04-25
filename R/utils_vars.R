@@ -34,8 +34,8 @@ make_test_dates_list <- function(ts_data, type = "tscv", n = 8, h_max = 6,
 
       from_the_right <-  i - 1
       
-      end_test_pos <- data_length - from_the_right
-      start_test_pos <- end_test_pos - h_max 
+      end_test_pos <- data_length - from_the_right 
+      start_test_pos <- end_test_pos - h_max + 1
       end_training_pos <- start_test_pos - 1
       start_training_pos <- end_training_pos - training_length + 1
       
