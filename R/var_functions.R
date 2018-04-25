@@ -47,6 +47,9 @@ var_cv <- function(var_data, this_p, this_type = "const", n_cv = 8, h_max = 6,
                          start = this_tra_s,
                          end = this_tra_e)
     
+    print("nrow(training_y)")
+    print(nrow(training_y))
+    
     training_rgdp <- training_y[ , "rgdp"]
     
     test_y <- window(var_data, 
@@ -95,7 +98,8 @@ var_cv <- function(var_data, this_p, this_type = "const", n_cv = 8, h_max = 6,
 
 try_sizes_vbls_lags <- function(var_data, target_v, vec_size = c(3,4,5), 
                                 vec_lags = c(1,2,3,4), pre_selected_v = "",
-                               is_cv = FALSE, h_max = 6, n_cv = 8) {
+                               is_cv = FALSE, h_max = 5, n_cv = 8,
+                               training_length = 16) {
   
   # print("in try_sizes_vbls_lags, has_timetk_idx(var_data)")
   # print(has_timetk_idx(var_data))
@@ -171,7 +175,7 @@ try_sizes_vbls_lags <- function(var_data, target_v, vec_size = c(3,4,5),
         this_cv <- var_cv(var_data = sub_data, timetk_idx = FALSE,
                           external_idx = sub_data_tk_index, this_p = this_lag,
                           this_type = "const", h_max = h_max,
-                          n_cv = n_cv)
+                          n_cv = n_cv, training_length = training_length)
         
         var_fixed_size_fixed_vset_all_lags[[k]] <- this_cv
         

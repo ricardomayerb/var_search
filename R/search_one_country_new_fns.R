@@ -1,8 +1,6 @@
 source('./R/utils_vars.R')
 source('./R/var_functions.R')
 
-
-
 data_path <- "./data/pre_r_data/"
 
 file_names <- list.files(path = data_path, recursive = T, pattern = '*.xlsx')
@@ -73,19 +71,21 @@ this_tes_e <- dates_list[[1]]$tes_e
 
 mock_all_vars <- c("rgdp", "rpc", "tot", "imp", "exp", "ip", "m1")
 
-var_res <- try_sizes_vbls_lags(vec_size = vec_n_varsize, vec_lags = vec_max_lags,
-                   var_data = data_in_diff, target_v = target_rgdp,
-                   pre_selected_v = vec_a_priori_variables, is_cv = TRUE,
-                   h_max = 3, n_cv = 4)
+train_span <- 20
+number_of_cv <- 8
+fc_horizon <- 6
 
+var_res <- try_sizes_vbls_lags(vec_size = vec_n_varsize, 
+                               vec_lags = vec_max_lags,
+                               var_data = data_in_diff, 
+                              target_v = target_rgdp,
+                              pre_selected_v = vec_a_priori_variables, 
+                              is_cv = TRUE,
+                              training_length = train_span,
+                              h_max = fc_horizon, n_cv = number_of_cv)
 
-
-
-
-
-
-
-cv_marks <-  make_test_dates_list(ts_data = data_in_diff, n = 4)
+cv_marks <-  make_test_dates_list(ts_data = data_in_diff, n = number_of_cv,
+                                  h_max = fc_horizon, training_length = train_span)
 
 cv_dates <- cv_marks[["list_of_dates"]]
 cv_pos <- cv_marks[["list_of_positions"]]
@@ -110,6 +110,11 @@ get_last_training_obs <- function(this_data_ts, list_yq) {
 
 cv_rgdp_lev <- get_last_training_obs(data_ts, training_end_yq)
 
+
+# 
+# back_from_diff_in_cv <- function(lev_ts, diff_ts, n){
+#   
+# }
 
 
 # foo <- var_res %>% 
