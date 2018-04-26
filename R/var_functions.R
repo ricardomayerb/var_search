@@ -216,14 +216,28 @@ try_sizes_vbls_lags <- function(var_data, target_v, vec_size = c(3,4,5),
 
 
 get_sets_of_variables <- function(df, this_size, all_variables, 
-                                  already_chosen) {
+                                  already_chosen, bt_factor,
+                                  maxlag = 12) {
   
   # df_names <- colnames(df)
 
   len_already_chosen <- length(already_chosen)
   len_other_vbls <- this_size - len_already_chosen
   
-  df_alr_chosen <- df[, c(target_variables, all_rest_variables)]
+  tiao_box_treshold <- 2 / sqrt(nrow(df))
+  tresh <- bt_factor * tiao_box_treshold
+  
+  p_and_ccm_mat <- ccm(df, output = FALSE, lags = maxlag)
+  
+  ccm_mat <- p_and_ccm_mat$ccm
+  ccm_mat_rgdp <- ccm_mat[1:ncol(df) ,]
+  geq_cor <- abs(ccm_mat_rgdp) >= tresh
+  geq_cor_row_sums <- rowSums(geq_cor) 
+  geq_cor_variables <- geq_cor_row_sums >= 1
+    
+  print(geq_cor_variables)
+  
+  passing_variables <- all_variables[geq_cor_variables]
   
   # names_df_target_and_rest <- colnames(df_target_and_rest)
   # 

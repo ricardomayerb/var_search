@@ -133,14 +133,36 @@ to_compare <- var_res %>%
   arrange(unlist(accu_lev)) %>% 
   mutate(level_ranking = 1:n()) 
   
+all_names <- colnames(data_in_diff)
 
-
+mysele <- get_sets_of_variables(df = data_in_diff, this_size = 4,
+                                all_variables = all_names, 
+                                already_chosen = c("rgdp", "rpc"), 
+                                bt_factor = 1) 
 
 result_ccm <- ccm(data_in_diff, output = FALSE, lags = 12)
 
 foom <- result_ccm$ccm
+foom_rgdp <- foom[1:ncol(data_in_diff),]
 
-print(result_ccm)
+foom_rgdp_redu <- foom_rgdp[1:5, 1:3]
+foom_rgdp_redu
+
+colSums(foom_rgdp_redu)
+apply(foom_rgdp_redu, 2, sum)
+
+colMeans(foom_rgdp_redu)
+apply(foom_rgdp_redu, 2, mean)
+
+foom_rgdp_redu
+a <- abs(foom_rgdp_redu) > 0.3  
+a
+rowSums(a)
+
+moom <- ccm(data_in_diff, output = TRUE, lags = 12)
+
+
+# print(result_ccm)
 
 # # how to use diffinv
 # xvec <- c(2,3,4,1,5,7,7,3,2,2, 5, 1)
