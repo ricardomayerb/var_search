@@ -92,4 +92,31 @@ undiff_stuff <- cv_obs_fc_back_from_diff(lev_ts = data_ts, diff_ts = data_in_dif
                                 n_cv = number_of_cv, h_max = fc_horizon,
                                 cv_fcs_one_model = cv_fcs[[1]])
 
+cv_errors_yoy <- undiff_stuff$fcs_errors_level
+cv_test_sets_yoy <- undiff_stuff$test_obs_lev
+cv_fc_yoy <- undiff_stuff$fcs_level
 
+
+accu_foo <- from_diff_to_yoy_accu(lev_ts = data_ts, diff_ts = data_in_diff,
+                                  training_length = train_span,
+                                  n_cv = number_of_cv, h_max = fc_horizon,
+                                  cv_fcs_one_model = cv_fcs[[1]])
+
+to_compare <- var_res %>% 
+  mutate(accu_yoy = map(cv_fcs, from_diff_to_yoy_accu,
+                        lev_ts = data_ts, diff_ts = data_in_diff,
+                        training_length = train_span,
+                        n_cv = number_of_cv, h_max = fc_horizon))
+
+
+xvec <- c(2,3,4,1,5,7,7,3,2,2, 5, 1)
+xdiff <- diff(xvec)
+xvec
+xdiff
+diffinv(xdiff)
+xvec[1] + diffinv(xdiff)
+
+xdifflag4 <- diff(xvec, lag = 4)
+xdifflag4
+diffinv(xdifflag4, lag = 4)
+xvec[1:4] + diffinv(xdifflag4, lag = 4)

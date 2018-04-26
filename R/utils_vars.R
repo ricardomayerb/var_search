@@ -39,18 +39,21 @@ cv_obs_fc_back_from_diff <- function(lev_ts, diff_ts, training_length,
                                 end = this_training_end_yq)
     
     this_last_lev_tra_rgdp <- this_last_lev_tra[, "rgdp"]
-    cv_last_tra_obs_lev[[i]] <- this_last_lev_tra_rgdp
     
     this_test_lev <- window(lev_ts, start = this_test_start_yq,
                             end = this_test_end_yq)
     this_test_lev_rgdp <- this_test_lev[, "rgdp"]
+    
+    this_diff_fc_rgdp <- this_diff_fc
+    
+    this_level_fc_rgdp <-  this_last_lev_tra_rgdp[1] + cumsum(this_diff_fc_rgdp)
+
+    this_level_error <- this_test_lev_rgdp - this_level_fc_rgdp
+    
     cv_test_set_obs_lev[[i]] <- this_test_lev_rgdp
-    
-    this_level_fc <-  this_last_lev_tra_rgdp[1] + cumsum(this_diff_fc)
-    cv_fcs_lev[[i]] <- this_level_fc
-    
-    this_level_error <- this_test_lev - this_level_fc
+    cv_last_tra_obs_lev[[i]] <- this_last_lev_tra_rgdp
     cv_errors_lev[[i]] <- this_level_error
+    cv_fcs_lev[[i]] <- this_level_fc_rgdp
     
     
   }
@@ -70,6 +73,27 @@ fcs_accu <- function(fc_mat, test_data_mat) {
   mean_rmse <- mean(rmse_vec)
   return(mean_rmse)
 }
+
+from_diff_to_yoy_accu <- function(lev_ts, diff_ts, training_length,
+                                  n_cv, h_max, cv_fcs_one_model) {
+  
+  undiff_stuff <- cv_obs_fc_back_from_diff(lev_ts = lev_ts, diff_ts = diff_ts,
+                                           training_length = training_length,
+                                           n_cv = n_cv, h_max = h_max,
+                                           cv_fcs_one_model = cv_fcs_one_model)
+  
+  cv_test_sets_yoy <- undiff_stuff$test_obs_lev
+  cv_fc_yoy <- undiff_stuff$fcs_level
+  
+  cv_test_sets_yoy_mat <- reduce(cv_test_sets_yoy, rbind)
+  cv_fcs_yoy_mat <- reduce(cv_fc_yoy, rbind)
+  
+  accu_yoy <- fcs_accu(fc_mat = cv_fcs_yoy_mat, test_data_mat = cv_test_sets_yoy_mat) 
+  
+  return(accu_yoy)
+  
+}
+
 
 make_test_dates_list <- function(ts_data, type = "tscv", n = 8, h_max = 6,
                                  timetk_idx = TRUE, training_length = 20,
