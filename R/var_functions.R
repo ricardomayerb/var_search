@@ -215,7 +215,26 @@ try_sizes_vbls_lags <- function(var_data, target_v, vec_size = c(3,4,5),
 
 
 
-get_sets_of_variables <- function(all_variables, n_vbls, target_vbl = "rgdp",
-                                  fixed_vbls = "") {
+get_sets_of_variables <- function(df, this_size, all_variables, 
+                                  already_chosen) {
+  
+  # df_names <- colnames(df)
+
+  len_already_chosen <- length(already_chosen)
+  len_other_vbls <- this_size - len_already_chosen
+  
+  df_alr_chosen <- df[, c(target_variables, all_rest_variables)]
+  
+  # names_df_target_and_rest <- colnames(df_target_and_rest)
+  # 
+  # # print("names_df_target_and_rest")
+  # # print(names_df_target_and_rest)
+  # 
+  # result_ccm <- ccm(df, output = FALSE, lags = maxlag)
+  # 
+  # tiao_box_treshold <- 2 / sqrt(nrow(df))
+  # 
+  # n_target <- length(target_variables)
+  
   
 }

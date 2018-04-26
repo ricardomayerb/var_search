@@ -135,6 +135,13 @@ to_compare <- var_res %>%
   
 
 
+
+result_ccm <- ccm(data_in_diff, output = FALSE, lags = 12)
+
+foom <- result_ccm$ccm
+
+print(result_ccm)
+
 # # how to use diffinv
 # xvec <- c(2,3,4,1,5,7,7,3,2,2, 5, 1)
 # xdiff <- diff(xvec)
