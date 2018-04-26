@@ -235,9 +235,12 @@ get_sets_of_variables <- function(df, this_size, all_variables,
   geq_cor_row_sums <- rowSums(geq_cor) 
   geq_cor_variables <- geq_cor_row_sums >= 1
     
-  print(geq_cor_variables)
-  
   passing_variables <- all_variables[geq_cor_variables]
+  
+  passing_not_alr_chosen <- passing_variables[! passing_variables %in% already_chosen]
+  
+  print(passing_variables)
+  print(passing_not_alr_chosen)
   
   # names_df_target_and_rest <- colnames(df_target_and_rest)
   # 

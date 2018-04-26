@@ -85,6 +85,11 @@ var_res <- try_sizes_vbls_lags(vec_size = vec_n_varsize,
                               training_length = train_span,
                               h_max = fc_horizon, n_cv = number_of_cv)
 
+# full_sample_vars <- var_fc_from_best(inputs_best =var_res, VAR_data = data_in_diff,
+#                                      levQ = data_ts , custom_h = 12)
+# 
+# full_sample_vars
+
 cv_fcs <- var_res$cv_fcs
 
 # 
@@ -140,29 +145,7 @@ mysele <- get_sets_of_variables(df = data_in_diff, this_size = 4,
                                 already_chosen = c("rgdp", "rpc"), 
                                 bt_factor = 1) 
 
-result_ccm <- ccm(data_in_diff, output = FALSE, lags = 12)
 
-foom <- result_ccm$ccm
-foom_rgdp <- foom[1:ncol(data_in_diff),]
-
-foom_rgdp_redu <- foom_rgdp[1:5, 1:3]
-foom_rgdp_redu
-
-colSums(foom_rgdp_redu)
-apply(foom_rgdp_redu, 2, sum)
-
-colMeans(foom_rgdp_redu)
-apply(foom_rgdp_redu, 2, mean)
-
-foom_rgdp_redu
-a <- abs(foom_rgdp_redu) > 0.3  
-a
-rowSums(a)
-
-moom <- ccm(data_in_diff, output = TRUE, lags = 12)
-
-
-# print(result_ccm)
 
 # # how to use diffinv
 # xvec <- c(2,3,4,1,5,7,7,3,2,2, 5, 1)
