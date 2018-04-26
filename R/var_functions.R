@@ -155,16 +155,16 @@ try_sizes_vbls_lags <- function(var_data, target_v, vec_size = c(3,4,5),
         model_number <- model_number + 1
         
         this_lag <- vec_lags[k]
-        print(paste("i:", i))
-        print(paste("j:", j))
-        print(paste("k:", k))
-        
-        print(paste("vec size:", this_size))
-        print("free vars:")
-        print(vec_of_other_vbls)
-        print("endo vbls:")
-        print(vbls_for_var)
-        print(paste("lag = ", this_lag))
+        # print(paste("i:", i))
+        # print(paste("j:", j))
+        # print(paste("k:", k))
+        # 
+        # print(paste("vec size:", this_size))
+        # print("free vars:")
+        # print(vec_of_other_vbls)
+        # print("endo vbls:")
+        # print(vbls_for_var)
+        # print(paste("lag = ", this_lag))
         
         sub_data = var_data[, vbls_for_var]
 

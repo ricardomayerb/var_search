@@ -11,57 +11,108 @@ library(tibbletime)
 library(purrr)
 library(stringr)
 
+un_yoy <- function(init_lev, vec_yoy) {
+  
+  n_init <- length(init_lev)
+  n_yoy <- length(vec_yoy)
+  y_vec <- vector(mode = "numeric", length = n_init + n_yoy)
+  y_vec[1:n_init] <- init_lev
+  
+  for (i in seq_along(vec_yoy)) {
 
+    this_y <- vec_yoy[i] + y_vec[ i ]
+    
+    y_vec[n_init + i] <- this_y
+  }
+  
+  return(y_vec[(n_init+1) : (n_init+n_yoy)])
+}
 
-cv_obs_fc_back_from_diff <- function(lev_ts, diff_ts, training_length,
-                                     n_cv, h_max, cv_fcs_one_model){
+cv_obs_fc_back_from_diff <- function(yoy_ts, diff_ts, training_length,
+                                     n_cv, h_max, cv_fcs_one_model,
+                                     level_ts){
   
   cv_marks <-  make_test_dates_list(ts_data = diff_ts, n = n_cv,
-                                    h_max = h_max, training_length = training_length)
+                                    h_max = h_max, 
+                                    training_length = training_length)
   
   cv_yq <- cv_marks[["list_of_year_quarter"]]
   training_end_yq <- map(cv_yq, "tra_e")
   test_start_yq <- map(cv_yq, "tes_s")
   test_end_yq <- map(cv_yq, "tes_e")
+
+  cv_last_tra_obs_yoy <- list_along(training_end_yq)
   
-  cv_last_tra_obs_lev <- list_along(training_end_yq)
-  cv_test_set_obs_lev <- list_along(training_end_yq)
-  cv_fcs_lev <- list_along(training_end_yq)
-  cv_errors_lev <- list_along(training_end_yq)
+  cv_test_set_obs_yoy <- list_along(training_end_yq)
+  cv_fcs_yoy <- list_along(training_end_yq)
+  cv_errors_yoy <- list_along(training_end_yq)
+  
+  cv_test_set_obs_level <- list_along(training_end_yq)
+  cv_fcs_level <- list_along(training_end_yq)
+  cv_errors_level <- list_along(training_end_yq)
+  
   
   for (i in seq_along(test_end_yq)) {
     this_training_end_yq <- training_end_yq[[i]]
-    this_test_start_yq <- test_start_yq[[i]]
     this_test_end_yq <- test_end_yq[[i]]
+    
+    this_test_start_yq <- test_start_yq[[i]]
+    
+    this_training_end_y <- this_training_end_yq[1]
+    this_training_end_q <- this_training_end_yq[2]
+    
+    this_year_before_train_end <- c(this_training_end_y-1, this_training_end_q)
+    
     this_diff_fc <- cv_fcs_one_model[[i]]
     
-    this_last_lev_tra <- window(lev_ts, start = this_training_end_yq,
+    this_last_yoy_tra <- window(yoy_ts, start = this_training_end_yq,
                                 end = this_training_end_yq)
     
-    this_last_lev_tra_rgdp <- this_last_lev_tra[, "rgdp"]
+    this_last_yoy_tra_rgdp <- this_last_yoy_tra[, "rgdp"]
     
-    this_test_lev <- window(lev_ts, start = this_test_start_yq,
+    this_test_yoy <- window(yoy_ts, start = this_test_start_yq,
                             end = this_test_end_yq)
-    this_test_lev_rgdp <- this_test_lev[, "rgdp"]
+    this_test_yoy_rgdp <- this_test_yoy[, "rgdp"]
     
+    this_last_year_of_train_level <- window(level_ts, 
+                                      start = this_year_before_train_end,
+                                      end = this_training_end_yq)
+    
+    this_last_year_of_train_level_rgdp <- this_last_year_of_train_level[, "rgdp"]
+ 
     this_diff_fc_rgdp <- this_diff_fc
     
-    this_level_fc_rgdp <-  this_last_lev_tra_rgdp[1] + cumsum(this_diff_fc_rgdp)
+    this_yoy_fc_rgdp <-  this_last_yoy_tra_rgdp[1] + cumsum(this_diff_fc_rgdp)
 
-    this_level_error <- this_test_lev_rgdp - this_level_fc_rgdp
+    this_yoy_error <- this_test_yoy_rgdp - this_yoy_fc_rgdp
+
+    this_level_fc_rgdp <- un_yoy(init_lev = this_last_year_of_train_level_rgdp,
+                                 vec_yoy = this_yoy_fc_rgdp)  
     
-    cv_test_set_obs_lev[[i]] <- this_test_lev_rgdp
-    cv_last_tra_obs_lev[[i]] <- this_last_lev_tra_rgdp
-    cv_errors_lev[[i]] <- this_level_error
-    cv_fcs_lev[[i]] <- this_level_fc_rgdp
+    this_test_level <- window(level_ts, start = this_test_start_yq,
+                            end = this_test_end_yq)
+    this_test_level_rgdp <- this_test_level[, "rgdp"]
+
+    this_level_error <- this_test_level_rgdp - this_level_fc_rgdp 
+
+    cv_last_tra_obs_yoy[[i]] <- this_last_yoy_tra_rgdp
     
+    cv_test_set_obs_yoy[[i]] <- this_test_yoy_rgdp
+    cv_errors_yoy[[i]] <- this_yoy_error
+    cv_fcs_yoy[[i]] <- this_yoy_fc_rgdp
+
+    cv_test_set_obs_level[[i]] <- this_test_level_rgdp
+    cv_errors_level[[i]] <- this_level_error
+    cv_fcs_level[[i]] <- this_level_fc_rgdp
     
   }
   
-  return(list(test_obs_lev = cv_test_set_obs_lev,
-              last_train_obs_lev = cv_last_tra_obs_lev,
-              fcs_level = cv_fcs_lev,
-              fcs_errors_level = cv_errors_lev))
+  return(list(test_obs_yoy = cv_test_set_obs_yoy,
+              fcs_yoy = cv_fcs_yoy,
+              fcs_errors_yoy = cv_errors_yoy,
+              test_obs_level = cv_test_set_obs_level,
+              fcs_level = cv_fcs_level,
+              fcs_errors_level = cv_errors_level))
   
 }
 
@@ -74,16 +125,17 @@ fcs_accu <- function(fc_mat, test_data_mat) {
   return(mean_rmse)
 }
 
-from_diff_to_yoy_accu <- function(lev_ts, diff_ts, training_length,
+from_diff_to_yoy_accu <- function(yoy_ts, diff_ts, level_ts, training_length,
                                   n_cv, h_max, cv_fcs_one_model) {
   
-  undiff_stuff <- cv_obs_fc_back_from_diff(lev_ts = lev_ts, diff_ts = diff_ts,
+  undiff_stuff <- cv_obs_fc_back_from_diff(yoy_ts = yoy_ts, diff_ts = diff_ts,
+                                           level_ts = level_ts,
                                            training_length = training_length,
                                            n_cv = n_cv, h_max = h_max,
                                            cv_fcs_one_model = cv_fcs_one_model)
   
-  cv_test_sets_yoy <- undiff_stuff$test_obs_lev
-  cv_fc_yoy <- undiff_stuff$fcs_level
+  cv_test_sets_yoy <- undiff_stuff$test_obs_yoy
+  cv_fc_yoy <- undiff_stuff$fcs_yoy
   
   cv_test_sets_yoy_mat <- reduce(cv_test_sets_yoy, rbind)
   cv_fcs_yoy_mat <- reduce(cv_fc_yoy, rbind)
@@ -91,6 +143,27 @@ from_diff_to_yoy_accu <- function(lev_ts, diff_ts, training_length,
   accu_yoy <- fcs_accu(fc_mat = cv_fcs_yoy_mat, test_data_mat = cv_test_sets_yoy_mat) 
   
   return(accu_yoy)
+  
+}
+
+from_diff_to_lev_accu <- function(yoy_ts, diff_ts, level_ts, training_length,
+                                  n_cv, h_max, cv_fcs_one_model) {
+  
+  undiff_stuff <- cv_obs_fc_back_from_diff(yoy_ts = yoy_ts, diff_ts = diff_ts,
+                                           level_ts = level_ts,
+                                           training_length = training_length,
+                                           n_cv = n_cv, h_max = h_max,
+                                           cv_fcs_one_model = cv_fcs_one_model)
+  
+  cv_test_sets_lev <- undiff_stuff$test_obs_level
+  cv_fc_lev <- undiff_stuff$fcs_level
+  
+  cv_test_sets_lev_mat <- reduce(cv_test_sets_lev, rbind)
+  cv_fcs_lev_mat <- reduce(cv_fc_lev, rbind)
+  
+  accu_lev <- fcs_accu(fc_mat = cv_fcs_lev_mat, test_data_mat = cv_test_sets_lev_mat) 
+  
+  return(accu_lev)
   
 }
 
