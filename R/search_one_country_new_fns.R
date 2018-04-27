@@ -45,7 +45,7 @@ variable_names <- colnames(data_ts)
 ncolumns <- ncol(data_ts)
 
 this_bt <- 1
-vec_max_lags <- c(2, 3, 4, 5)
+vec_max_lags <- c(2, 3, 4)
 vec_n_varsize <- c(3, 4)
 n_best <- 5
 
@@ -83,7 +83,8 @@ var_res <- try_sizes_vbls_lags(vec_size = vec_n_varsize,
                               pre_selected_v = vec_a_priori_variables, 
                               is_cv = TRUE,
                               training_length = train_span,
-                              h_max = fc_horizon, n_cv = number_of_cv)
+                              h_max = fc_horizon, n_cv = number_of_cv,
+                              bt_factor = 1.5, maxlag_ccm = 8)
 
 # full_sample_vars <- var_fc_from_best(inputs_best =var_res, VAR_data = data_in_diff,
 #                                      levQ = data_ts , custom_h = 12)
@@ -143,7 +144,7 @@ all_names <- colnames(data_in_diff)
 mysele <- get_sets_of_variables(df = data_in_diff, this_size = 4,
                                 all_variables = all_names, 
                                 already_chosen = c("rgdp", "rpc"), 
-                                bt_factor = 1) 
+                                bt_factor = 1.5, maxlag_ccm = 6) 
 
 
 

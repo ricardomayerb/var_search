@@ -99,7 +99,8 @@ var_cv <- function(var_data, this_p, this_type = "const", n_cv = 8, h_max = 6,
 try_sizes_vbls_lags <- function(var_data, target_v, vec_size = c(3,4,5), 
                                 vec_lags = c(1,2,3,4), pre_selected_v = "",
                                is_cv = FALSE, h_max = 5, n_cv = 8,
-                               training_length = 16) {
+                               training_length = 16, maxlag_ccm = 8,
+                               bt_factor = 1.4) {
   
   # print("in try_sizes_vbls_lags, has_timetk_idx(var_data)")
   # print(has_timetk_idx(var_data))
@@ -107,7 +108,7 @@ try_sizes_vbls_lags <- function(var_data, target_v, vec_size = c(3,4,5),
   len_size <-  length(vec_size)
   len_lag <- length(vec_lags)
   
-  
+  all_names <- colnames(var_data)
   
   # i, outer most loop: var size (number of edogenous variables), e.g. 3, then 4, then 5 variables
   ## j, loop through the combination of variables of a fixed size, e.g. all sets of 5 variables
@@ -133,13 +134,28 @@ try_sizes_vbls_lags <- function(var_data, target_v, vec_size = c(3,4,5),
     len_already_chosen <- length(already_chosen)
     len_other_vbls <- this_size - len_already_chosen
     
-    if (this_size == 3) {
-      sets_of_other_variables <- list(c("tot"), c("imp"), c("exp"))
-    }
     
-    if (this_size == 4) {
-      sets_of_other_variables <- list(c("tot", "ip"), c("imp", "m1"))
-    }
+    sets_of_other_variables <- get_sets_of_variables(
+      df = var_data, this_size = this_size, all_variables = all_names, 
+      already_chosen = already_chosen, bt_factor = bt_factor,
+      maxlag_ccm = maxlag_ccm)
+    
+    print(class("sets_of_other_variables"))
+    print(class(sets_of_other_variables))
+    
+    print("sets_of_other_variables")
+    print(sets_of_other_variables)
+    
+  
+      
+# 
+#     if (this_size == 3) {
+#       sets_of_other_variables <- list(c("tot"), c("imp"), c("exp"))
+#     }
+#     
+#     if (this_size == 4) {
+#       sets_of_other_variables <- list(c("tot", "ip"), c("imp", "m1"))
+#     }
     
     len_sets_of_vars <- length(sets_of_other_variables)
     
@@ -155,16 +171,16 @@ try_sizes_vbls_lags <- function(var_data, target_v, vec_size = c(3,4,5),
         model_number <- model_number + 1
         
         this_lag <- vec_lags[k]
-        # print(paste("i:", i))
-        # print(paste("j:", j))
-        # print(paste("k:", k))
-        # 
-        # print(paste("vec size:", this_size))
-        # print("free vars:")
-        # print(vec_of_other_vbls)
-        # print("endo vbls:")
-        # print(vbls_for_var)
-        # print(paste("lag = ", this_lag))
+        print(paste("i:", i))
+        print(paste("j:", j))
+        print(paste("k:", k))
+
+        print(paste("vec size:", this_size))
+        print("free vars:")
+        print(vec_of_other_vbls)
+        print("endo vbls:")
+        print(vbls_for_var)
+        print(paste("lag = ", this_lag))
         
         sub_data = var_data[, vbls_for_var]
 
@@ -217,7 +233,7 @@ try_sizes_vbls_lags <- function(var_data, target_v, vec_size = c(3,4,5),
 
 get_sets_of_variables <- function(df, this_size, all_variables, 
                                   already_chosen, bt_factor,
-                                  maxlag = 12) {
+                                  maxlag_ccm = 12) {
   
   # df_names <- colnames(df)
 
@@ -227,7 +243,7 @@ get_sets_of_variables <- function(df, this_size, all_variables,
   tiao_box_treshold <- 2 / sqrt(nrow(df))
   tresh <- bt_factor * tiao_box_treshold
   
-  p_and_ccm_mat <- ccm(df, output = FALSE, lags = maxlag)
+  p_and_ccm_mat <- ccm(df, output = FALSE, lags = maxlag_ccm)
   
   ccm_mat <- p_and_ccm_mat$ccm
   ccm_mat_rgdp <- ccm_mat[1:ncol(df) ,]
@@ -237,10 +253,21 @@ get_sets_of_variables <- function(df, this_size, all_variables,
     
   passing_variables <- all_variables[geq_cor_variables]
   
-  passing_not_alr_chosen <- passing_variables[! passing_variables %in% already_chosen]
+  passing_not_alr_chosen <- passing_variables[!passing_variables %in% already_chosen]
   
-  print(passing_variables)
-  print(passing_not_alr_chosen)
+  n_passing_vbls <- length(passing_not_alr_chosen)
+  
+  print(paste("We have", n_passing_vbls, "variables, to fill", len_other_vbls,
+              "slots in the VAR.Total possible combinations :",
+              choose(n_passing_vbls, len_other_vbls)))
+  
+  combinations <- combn(passing_not_alr_chosen, len_other_vbls)
+  # print("combinations")
+  # print(combinations)
+  
+  
+  # print(passing_variables)
+  # print(passing_not_alr_chosen)
   
   # names_df_target_and_rest <- colnames(df_target_and_rest)
   # 
