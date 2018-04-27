@@ -79,4 +79,5 @@ rmse_and_ranking <- var_res %>% select(cv_vbl_names, cv_lag,
                                        diff_ranking, yoy_ranking, level_ranking)
 
 est_and_fcs <- rmse_and_ranking %>% 
-  rename(variables = cv_vbl_names, lags = cv_lag)
+  rename(variables = cv_vbl_names, lags = cv_lag) 
+  
