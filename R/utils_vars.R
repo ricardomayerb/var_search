@@ -1,15 +1,9 @@
 library(xts)
-library(tidyr)
-library(dplyr)
 library(timetk)
 library(readxl)
-library(lubridate)
-library(purrr)
 library(forecast)
-library(ggplot2)
 library(tibbletime)
-library(purrr)
-library(stringr)
+library(tidyverse)
 
 un_yoy <- function(init_lev, vec_yoy) {
   

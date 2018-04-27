@@ -5,7 +5,6 @@ library(xts)
 library(timetk)
 library(readxl)
 library(lubridate)
-library(purrr)
 library(forecast)
 library(tibbletime)
 library(haven)
@@ -140,11 +139,11 @@ try_sizes_vbls_lags <- function(var_data, target_v, vec_size = c(3,4,5),
       already_chosen = already_chosen, bt_factor = bt_factor,
       maxlag_ccm = maxlag_ccm)
     
-    print(class("sets_of_other_variables"))
-    print(class(sets_of_other_variables))
-    
-    print("sets_of_other_variables")
-    print(sets_of_other_variables)
+    # print(class("sets_of_other_variables"))
+    # print(class(sets_of_other_variables))
+    # 
+    # print("sets_of_other_variables")
+    # print(sets_of_other_variables)
     
   
       
@@ -157,30 +156,34 @@ try_sizes_vbls_lags <- function(var_data, target_v, vec_size = c(3,4,5),
 #       sets_of_other_variables <- list(c("tot", "ip"), c("imp", "m1"))
 #     }
     
-    len_sets_of_vars <- length(sets_of_other_variables)
+    # len_sets_of_vars <- length(sets_of_other_variables)
+    len_sets_of_vars <- ncol(sets_of_other_variables)
     
     var_fixed_size_all_vset_all_lags <- list_along(seq.int(1, len_sets_of_vars))
     
     for (j in seq.int(1, len_sets_of_vars)) {
       
-      vec_of_other_vbls <- sets_of_other_variables[[j]]
+      # vec_of_other_vbls <- sets_of_other_variables[[j]]
+      vec_of_other_vbls <- sets_of_other_variables[,j]
       vbls_for_var <- c(already_chosen, vec_of_other_vbls)
       
       for (k in seq.int(1, len_lag)) {
         
         model_number <- model_number + 1
-        
         this_lag <- vec_lags[k]
-        print(paste("i:", i))
-        print(paste("j:", j))
-        print(paste("k:", k))
 
-        print(paste("vec size:", this_size))
-        print("free vars:")
-        print(vec_of_other_vbls)
-        print("endo vbls:")
-        print(vbls_for_var)
-        print(paste("lag = ", this_lag))
+        # print(paste("Model nubmer", model_number))
+        # 
+        # print(paste("i:", i))
+        # print(paste("j:", j))
+        # print(paste("k:", k))
+        # 
+        # print(paste("vec size:", this_size))
+        # print("free vars:")
+        # print(vec_of_other_vbls)
+        # print("endo vbls:")
+        # print(vbls_for_var)
+        # print(paste("lag = ", this_lag))
         
         sub_data = var_data[, vbls_for_var]
 
@@ -224,7 +227,31 @@ try_sizes_vbls_lags <- function(var_data, target_v, vec_size = c(3,4,5),
     ) %>% 
     arrange(mean_cv_rmse) %>% 
     mutate(ranking = 1:n()) %>% 
-    filter(ranking <= 100)
+    mutate(accu_yoy = map(cv_fcs, from_diff_to_yoy_accu,
+                          yoy_ts = data_ts, diff_ts = data_in_diff, 
+                          level_ts = original_data_ts, 
+                          training_length = train_span, n_cv = number_of_cv,
+                          h_max = fc_horizon),
+           accu_lev = map(cv_fcs, from_diff_to_lev_accu,
+                          yoy_ts = data_ts, diff_ts = data_in_diff, 
+                          level_ts = original_data_ts, 
+                          training_length = train_span, n_cv = number_of_cv,
+                          h_max = fc_horizon)
+           ) %>% 
+    arrange(mean_cv_rmse) %>% 
+    mutate(diff_ranking = 1:n()) %>% 
+    arrange(unlist(accu_yoy)) %>% 
+    mutate(yoy_ranking = 1:n()) %>% 
+    arrange(unlist(accu_lev)) %>% 
+    mutate(level_ranking = 1:n()) %>% 
+    rename(accu_diff_yoy = mean_cv_rmse) %>% 
+    filter((diff_ranking <= 30) | (yoy_ranking <= 30) | (level_ranking <= 30))
+  
+  print(paste("Number of models analyzed:", model_number))
+  print(paste("CV repetitions:", number_of_cv))
+  print(paste("Total estimations and fcs:", number_of_cv*model_number))
+  
+  
   
   return(results_all_models)
 }
@@ -234,8 +261,6 @@ try_sizes_vbls_lags <- function(var_data, target_v, vec_size = c(3,4,5),
 get_sets_of_variables <- function(df, this_size, all_variables, 
                                   already_chosen, bt_factor,
                                   maxlag_ccm = 12) {
-  
-  # df_names <- colnames(df)
 
   len_already_chosen <- length(already_chosen)
   len_other_vbls <- this_size - len_already_chosen
@@ -262,23 +287,124 @@ get_sets_of_variables <- function(df, this_size, all_variables,
               choose(n_passing_vbls, len_other_vbls)))
   
   combinations <- combn(passing_not_alr_chosen, len_other_vbls)
-  # print("combinations")
-  # print(combinations)
-  
-  
-  # print(passing_variables)
-  # print(passing_not_alr_chosen)
-  
-  # names_df_target_and_rest <- colnames(df_target_and_rest)
-  # 
-  # # print("names_df_target_and_rest")
-  # # print(names_df_target_and_rest)
-  # 
-  # result_ccm <- ccm(df, output = FALSE, lags = maxlag)
-  # 
-  # tiao_box_treshold <- 2 / sqrt(nrow(df))
-  # 
-  # n_target <- length(target_variables)
-  
-  
+
 }
+
+
+var_fc_from_best <- function(inputs_best, VAR_data, levQ, custom_h = 12) {
+  VARs_from_best_inputs <- inputs_best %>%
+    mutate(
+      vfit = map2(
+        variables, lags,
+        function(x, y) vars::VAR(y = VAR_data[, x], p = y)
+      ),
+      fc_7 = map(vfit, forecast, h = 7),
+      fc_7_rgdp_mean = map(fc_7, c("forecast", "rgdp", "mean")),
+      ee1 = map(map(fc_7_rgdp_mean, calc_ee, levQ = levQ), "ee1"),
+      ee2 = map(map(fc_7_rgdp_mean, calc_ee, levQ = levQ), "ee2"),
+      bp1 = map(map(fc_7_rgdp_mean, calc_bp, levQ = levQ), "bp1"),
+      bp2 = map(map(fc_7_rgdp_mean, calc_bp, levQ = levQ), "bp2")
+    )
+  
+  fc_with_ave <- add_average_fcs(VARs_from_best_inputs)
+  
+  fc_with_ave <- fc_with_ave %>%
+    mutate(
+      ee1 = map(map(fc_7_rgdp_mean, calc_ee, levQ = levQ), "ee1"),
+      ee2 = map(map(fc_7_rgdp_mean, calc_ee, levQ = levQ), "ee2"),
+      bp1 = map(map(fc_7_rgdp_mean, calc_bp, levQ = levQ), "bp1"),
+      bp2 = map(map(fc_7_rgdp_mean, calc_bp, levQ = levQ), "bp2")
+    )
+  
+  return(list(
+    var_fc_indiv = VARs_from_best_inputs,
+    fcs_ave = fc_with_ave
+  ))
+}
+
+
+add_average_fcs <- function(var_fc_tbl, n_ave = c(1, 3, 5)) {
+  just_fcs <- var_fc_tbl %>% dplyr::select(fc_7_rgdp_mean, tibble_id)
+  new_just_fcs <- just_fcs
+  j_names <- names(just_fcs)
+  
+  fc_h <- length(var_fc_tbl$fc_7_rgdp_mean[[1]])
+  
+  ts_start <- (var_fc_tbl %>%
+                 mutate(st = map(fc_7_rgdp_mean, start)) %>%
+                 dplyr::select(st))[[1, 1]]
+  
+  var_all_with_rankings <- var_fc_tbl %>%
+    arrange(RMSE) %>%
+    mutate(rmse_ranking = 1:n()) %>%
+    arrange(MAE) %>%
+    mutate(mae_ranking = 1:n()) %>%
+    arrange(Theil) %>%
+    mutate(theil_ranking = 1:n())
+  
+  
+  do_list_ave <- function(sorted_tbl) {
+    rgdp_fc_as_matrix <- sorted_tbl %>%
+      dplyr::select(fc_7_rgdp_mean) %>%
+      unlist() %>%
+      matrix(ncol = fc_h, byrow = TRUE)
+    
+    fc_colmeans <- colMeans(rgdp_fc_as_matrix)
+    
+    return(fc_colmeans)
+  }
+  
+  for (i in 1:length(n_ave)) {
+    rmse_id <- paste("ave_rmse", n_ave[i], sep = "_")
+    mae_id <- paste("ave_mae", n_ave[i], sep = "_")
+    theil_id <- paste("ave_theil", n_ave[i], sep = "_")
+    ave_of_ave_id <- paste("ave_r_m_t", n_ave[i], sep = "_")
+    
+    this_ave_rmse <- var_all_with_rankings %>%
+      filter(rmse_ranking <= n_ave[i]) %>%
+      do_list_ave()
+    
+    this_ave_mae <- var_all_with_rankings %>%
+      filter(mae_ranking <= n_ave[i]) %>%
+      do_list_ave()
+    
+    this_ave_theil <- var_all_with_rankings %>%
+      filter(rmse_ranking <= n_ave[i]) %>%
+      do_list_ave()
+    
+    this_ave_of_aves <- colMeans(rbind(
+      this_ave_rmse, this_ave_mae,
+      this_ave_theil
+    ))
+    
+    this_ave_rmse_ts <- tk_ts(this_ave_rmse, start = ts_start, frequency = 4)
+    this_ave_mae_ts <- tk_ts(this_ave_mae, start = ts_start, frequency = 4)
+    this_ave_theil_ts <- tk_ts(this_ave_theil, start = ts_start, frequency = 4)
+    this_ave_of_aves_ts <- tk_ts(this_ave_of_aves,
+                                 start = ts_start,
+                                 frequency = 4
+    )
+    
+    this_ave_rmse_tbl <- tibble(list(this_ave_rmse_ts), rmse_id)
+    names(this_ave_rmse_tbl) <- j_names
+    
+    this_ave_mae_tbl <- tibble(list(this_ave_mae_ts), mae_id)
+    names(this_ave_mae_tbl) <- j_names
+    
+    this_ave_theil_tbl <- tibble(list(this_ave_theil_ts), theil_id)
+    names(this_ave_theil_tbl) <- j_names
+    
+    this_ave_of_aves_tbl <- tibble(list(this_ave_of_aves_ts), ave_of_ave_id)
+    names(this_ave_of_aves_tbl) <- j_names
+    
+    new_ave_fcs <- this_ave_of_aves_tbl %>%
+      rbind(this_ave_rmse_tbl) %>%
+      rbind(this_ave_mae_tbl) %>%
+      rbind(this_ave_theil_tbl)
+    
+    new_just_fcs <- new_just_fcs %>% rbind(new_ave_fcs)
+  }
+  
+  return(new_just_fcs)
+}
+
