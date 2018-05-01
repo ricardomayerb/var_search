@@ -95,11 +95,11 @@ var_cv <- function(var_data, this_p, this_type = "const", n_cv = 8, h_max = 6,
               cv_lag = cv_lag))
 }
 
-try_sizes_vbls_lags <- function(var_data, target_v, vec_size = c(3,4,5), 
+try_sizes_vbls_lags <- function(var_data, yoy_data, level_data, target_v, vec_size = c(3,4,5), 
                                 vec_lags = c(1,2,3,4), pre_selected_v = "",
                                is_cv = FALSE, h_max = 5, n_cv = 8,
                                training_length = 16, maxlag_ccm = 8,
-                               bt_factor = 1.4) {
+                               bt_factor = 1.4, return_cv = TRUE) {
   
   # print("in try_sizes_vbls_lags, has_timetk_idx(var_data)")
   # print(has_timetk_idx(var_data))
@@ -228,13 +228,13 @@ try_sizes_vbls_lags <- function(var_data, target_v, vec_size = c(3,4,5),
     arrange(mean_cv_rmse) %>% 
     mutate(ranking = 1:n()) %>% 
     mutate(accu_yoy = map(cv_fcs, from_diff_to_yoy_accu,
-                          yoy_ts = data_ts, diff_ts = data_in_diff, 
-                          level_ts = original_data_ts, 
+                          yoy_ts = yoy_data, diff_ts = var_data, 
+                          level_ts = level_data, 
                           training_length = train_span, n_cv = number_of_cv,
                           h_max = fc_horizon),
            accu_lev = map(cv_fcs, from_diff_to_lev_accu,
-                          yoy_ts = data_ts, diff_ts = data_in_diff, 
-                          level_ts = original_data_ts, 
+                          yoy_ts = yoy_data, diff_ts = var_data, 
+                          level_ts = level_data, 
                           training_length = train_span, n_cv = number_of_cv,
                           h_max = fc_horizon)
            ) %>% 
@@ -247,13 +247,30 @@ try_sizes_vbls_lags <- function(var_data, target_v, vec_size = c(3,4,5),
     rename(accu_diff_yoy = mean_cv_rmse) %>% 
     filter((diff_ranking <= 30) | (yoy_ranking <= 30) | (level_ranking <= 30))
   
+  print(paste("Tried", len_lag, "different choices of lags per each combination"))
   print(paste("Number of models analyzed:", model_number))
   print(paste("CV repetitions:", number_of_cv))
   print(paste("Total estimations and fcs:", number_of_cv*model_number))
   
+  cv_objects <- results_all_models %>% select(cv_vbl_names, cv_lag, cv_errors, cv_test_data,
+                                   cv_fcs) %>% 
+    rename(variables = cv_vbl_names, lags = cv_lag)
+  
+  accu_rankings_models <- results_all_models %>% 
+    select(cv_vbl_names, cv_lag, accu_diff_yoy, accu_yoy, accu_lev,
+           diff_ranking, yoy_ranking, level_ranking) %>% 
+    rename(variables = cv_vbl_names, lags = cv_lag)
   
   
-  return(results_all_models)
+  if (return_cv) {
+    return(list(accu_rankings_models = accu_rankings_models,
+                cv_objects = cv_objects))
+  } else {
+    return(list(accu_rankings_models = accu_rankings_models))
+    
+  }
+  
+  
 }
 
 
@@ -290,48 +307,79 @@ get_sets_of_variables <- function(df, this_size, all_variables,
 
 }
 
+calc_ee <- function(vec_of_dQ, levQ, cut_1 = 3, cut_2 = 7) {
+  ee2_start <- cut_1 + 1
+  vec_Q_dQ_ee1 <- c(levQ, vec_of_dQ[1:cut_1])
+  Q_ee_1 <- mean(cumsum(vec_Q_dQ_ee1))
+  vec_Q_dQ_ee2 <- c(Q_ee_1, vec_of_dQ[ee2_start:cut_2])
+  Q_ee_2 <- mean(cumsum(vec_Q_dQ_ee2))
+  
+  return(
+    list(ee1 = Q_ee_1, ee2 = Q_ee_2)
+  )
+}
 
-var_fc_from_best <- function(inputs_best, VAR_data, levQ, custom_h = 12) {
-  VARs_from_best_inputs <- inputs_best %>%
+
+calc_bp <- function(vec_of_dQ, levQ, cut_1 = 1, cut_2 = 5) {
+  bp2_start <- cut_1 + 1
+  vec_Q_dQ_bp1 <- c(levQ, vec_of_dQ[1:cut_1])
+  Q_bp_1 <- mean(cumsum(vec_Q_dQ_bp1))
+  vec_Q_dQ_bp2 <- c(Q_bp_1, vec_of_dQ[bp2_start:cut_2])
+  Q_bp_2 <- mean(cumsum(vec_Q_dQ_bp2))
+  
+  return(
+    list(bp1 = Q_bp_1, bp2 = Q_bp_2)
+  )
+}
+
+
+var_fc_from_best <- function(rank_tibble, VAR_data, levQ, custom_h = 12) {
+  VARs_from_best_inputs <- rank_tibble %>%
     mutate(
       vfit = map2(
         variables, lags,
         function(x, y) vars::VAR(y = VAR_data[, x], p = y)
       ),
-      fc_7 = map(vfit, forecast, h = 7),
-      fc_7_rgdp_mean = map(fc_7, c("forecast", "rgdp", "mean")),
-      ee1 = map(map(fc_7_rgdp_mean, calc_ee, levQ = levQ), "ee1"),
-      ee2 = map(map(fc_7_rgdp_mean, calc_ee, levQ = levQ), "ee2"),
-      bp1 = map(map(fc_7_rgdp_mean, calc_bp, levQ = levQ), "bp1"),
-      bp2 = map(map(fc_7_rgdp_mean, calc_bp, levQ = levQ), "bp2")
+      fc = map(vfit, forecast, h = custom_h),
+      fc_rgdp_mean = map(fc, c("forecast", "rgdp", "mean")),
+      ee1 = map(map(fc_rgdp_mean, calc_ee, levQ = levQ), "ee1"),
+      ee2 = map(map(fc_rgdp_mean, calc_ee, levQ = levQ), "ee2"),
+      bp1 = map(map(fc_rgdp_mean, calc_bp, levQ = levQ), "bp1"),
+      bp2 = map(map(fc_rgdp_mean, calc_bp, levQ = levQ), "bp2")
     )
   
-  fc_with_ave <- add_average_fcs(VARs_from_best_inputs)
+  # fc_with_ave <- add_average_fcs(VARs_from_best_inputs)
+  # 
+  # fc_with_ave <- fc_with_ave %>%
+  #   mutate(
+  #     ee1 = map(map(fc_rgdp_mean, calc_ee, levQ = levQ), "ee1"),
+  #     ee2 = map(map(fc_rgdp_mean, calc_ee, levQ = levQ), "ee2"),
+  #     bp1 = map(map(fc_rgdp_mean, calc_bp, levQ = levQ), "bp1"),
+  #     bp2 = map(map(fc_rgdp_mean, calc_bp, levQ = levQ), "bp2")
+  #   )
   
-  fc_with_ave <- fc_with_ave %>%
-    mutate(
-      ee1 = map(map(fc_7_rgdp_mean, calc_ee, levQ = levQ), "ee1"),
-      ee2 = map(map(fc_7_rgdp_mean, calc_ee, levQ = levQ), "ee2"),
-      bp1 = map(map(fc_7_rgdp_mean, calc_bp, levQ = levQ), "bp1"),
-      bp2 = map(map(fc_7_rgdp_mean, calc_bp, levQ = levQ), "bp2")
-    )
   
-  return(list(
-    var_fc_indiv = VARs_from_best_inputs,
-    fcs_ave = fc_with_ave
-  ))
+  fc_with_ave <- 1
+  return(VARs_from_best_inputs)
+  # return(list(
+  #   var_fc_indiv = VARs_from_best_inputs,
+  #   fcs_ave = fc_with_ave
+  # ))
+  
+  
+  
 }
 
 
 add_average_fcs <- function(var_fc_tbl, n_ave = c(1, 3, 5)) {
-  just_fcs <- var_fc_tbl %>% dplyr::select(fc_7_rgdp_mean, tibble_id)
+  just_fcs <- var_fc_tbl %>% dplyr::select(fc_rgdp_mean, tibble_id)
   new_just_fcs <- just_fcs
   j_names <- names(just_fcs)
   
-  fc_h <- length(var_fc_tbl$fc_7_rgdp_mean[[1]])
+  fc_h <- length(var_fc_tbl$fc_rgdp_mean[[1]])
   
   ts_start <- (var_fc_tbl %>%
-                 mutate(st = map(fc_7_rgdp_mean, start)) %>%
+                 mutate(st = map(fc_rgdp_mean, start)) %>%
                  dplyr::select(st))[[1, 1]]
   
   var_all_with_rankings <- var_fc_tbl %>%

@@ -19,7 +19,51 @@ un_yoy <- function(init_lev, vec_yoy) {
     y_vec[n_init + i] <- this_y
   }
   
-  return(y_vec[(n_init+1) : (n_init+n_yoy)])
+  un_yoy_vec <- y_vec[(n_init+1) : (n_init+n_yoy)]
+  
+  return(un_yoy_vec)
+}
+
+un_yoy_ts <- function(init_lev, vec_yoy) {
+  
+  n_init <- length(init_lev)
+  n_yoy <- length(vec_yoy)
+  y_vec <- vector(mode = "numeric", length = n_init + n_yoy)
+  y_vec[1:n_init] <- init_lev
+  
+  for (i in seq_along(vec_yoy)) {
+    
+    this_y <- vec_yoy[i] + y_vec[ i ]
+    
+    y_vec[n_init + i] <- this_y
+  }
+  
+  un_yoy_vec <- y_vec[(n_init+1) : (n_init+n_yoy)]
+  
+  this_year <- as.integer(floor(time(vec_yoy)))
+  this_quarter <- as.integer(4 * (time(vec_yoy) - this_year + 0.25))
+  un_yoy_ts <- ts(un_yoy_vec, start = c(first(this_year), first(this_quarter)),
+                  end = c(last(this_year), last(this_quarter)),
+                  frequency = 4)
+  return(un_yoy_ts)
+}
+
+
+un_diff_ts <- function(last_undiffed, diffed_ts) {
+  undiffed <- as.numeric(last_undiffed) + cumsum(diffed_ts)
+
+  this_year <- as.integer(floor(time(diffed_ts)))
+  this_quarter <- as.integer(4 * (time(diffed_ts) - this_year + 0.25))
+  undiffed_ts <- ts(undiffed, start = c(first(this_year), first(this_quarter)),
+                    end = c(last(this_year), last(this_quarter)), frequency = 4)
+  
+  return(undiffed_ts)
+}
+
+un_diff <- function(last_undiffed, diffed_ts) {
+  undiffed <- as.numeric(last_undiffed) + cumsum(diffed_ts)
+  return(undiffed)
+  
 }
 
 cv_obs_fc_back_from_diff <- function(yoy_ts, diff_ts, training_length,
