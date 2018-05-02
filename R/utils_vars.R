@@ -4,6 +4,8 @@ library(readxl)
 library(forecast)
 library(tibbletime)
 library(tidyverse)
+library(gridExtra)
+library(grid)
 
 un_yoy <- function(init_lev, vec_yoy) {
   
@@ -19,7 +21,7 @@ un_yoy <- function(init_lev, vec_yoy) {
     y_vec[n_init + i] <- this_y
   }
   
-  un_yoy_vec <- y_vec[(n_init+1) : (n_init+n_yoy)]
+  un_yoy_vec <- y_vec[(n_init + 1):(n_init + n_yoy)]
   
   return(un_yoy_vec)
 }
@@ -38,7 +40,7 @@ un_yoy_ts <- function(init_lev, vec_yoy) {
     y_vec[n_init + i] <- this_y
   }
   
-  un_yoy_vec <- y_vec[(n_init+1) : (n_init+n_yoy)]
+  un_yoy_vec <- y_vec[(n_init + 1):(n_init + n_yoy)]
   
   this_year <- as.integer(floor(time(vec_yoy)))
   this_quarter <- as.integer(4 * (time(vec_yoy) - this_year + 0.25))

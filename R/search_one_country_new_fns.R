@@ -119,6 +119,56 @@ fcs_r_level <- est_and_fcs$fc_rgdp_mean_level
 one_fc_level <- fcs_r_level[[1]] 
 one_fc_level
 
+rgdp_diff_yoy_ts <- diff_yoy_data_ts[, "rgdp"]  
+rgdp_yoy_ts <- yoy_data_ts[, "rgdp"]  
+rgdp_level_ts <- level_data_ts[, "rgdp"]  
+
+
+plot_fcs_lev_yoy_diff <- function(lev_data, yoy_data, diff_yoy_data, lev_fc, 
+                                  yoy_fc, diff_yoy_fc) {
+  
+  
+  lev_variable <- lev_data[, "rgdp"]
+  yoy_variable <- yoy_data[, "rgdp"]
+  diff_yoy_variable <- diff_yoy_data[, "rgdp"]
+  
+  to_plot_lev <- tk_tbl(ts.union(lev_variable, lev_fc))
+  to_plot_yoy <- tk_tbl(ts.union(yoy_variable, yoy_fc))
+  to_plot_diff_yoy <- tk_tbl(ts.union(diff_yoy_variable, diff_yoy_fc))
+  
+  # lev_p <- ggplot(data = to_plot_lev, aes(x = index, y = lev_variable)) +
+  #   geom_line() +
+  #   scale_x_yearqtr()
+  
+  lev_p <- autoplot(lev_variable) +
+    autolayer(lev_fc, series = "(log) level") + 
+    ylab("log-level of real GDP")
+  
+
+  yoy_p <- autoplot(yoy_variable) +
+    autolayer(yoy_fc, series = "YoY")  + 
+    ylab("YoY change")
+  
+  diff_yoy_p <- autoplot(diff_yoy_variable) +
+    autolayer(diff_yoy_fc, series = "diff YoY")   + 
+    ylab("diff of YoY changes")
+  
+  # all_p <- grid.arrange(lev_p, yoy_p, diff_yoy_p, ncol = 1)
+  all_p <- arrangeGrob(lev_p, yoy_p, diff_yoy_p, ncol = 1)
+  
+  
+  return(list(lev_p, yoy_p, diff_yoy_p, all_p))
+  
+}
+
+foo <- plot_fcs_lev_yoy_diff(lev_data = level_data_ts, yoy_data = yoy_data_ts,
+                             diff_yoy_data = diff_yoy_data_ts, 
+                             lev_fc = one_fc_level,
+                             yoy_fc = one_fc_yoy, diff_yoy_fc = one_fc_diff)
+
+walk(foo, print)
+
+grid.draw(foo[[4]])
 
 
 one_fc_yoy <- un_diff_ts(last_yoy_rgdp, one_fc_diff)

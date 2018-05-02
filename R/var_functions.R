@@ -334,6 +334,13 @@ calc_bp <- function(vec_of_dQ, levQ, cut_1 = 1, cut_2 = 5) {
 
 
 var_fc_from_best <- function(rank_tibble, VAR_data, levQ, custom_h = 12) {
+  
+  end_time_vardata <- VAR_data %>% time %>% last
+  start_time_fc <- end_time_vardata + 0.25
+  start_year_fc <- floor(start_time_fc)
+  start_quarter_fc <- as.integer(4*(start_time_fc - start_year_fc))
+  
+  
   VARs_from_best_inputs <- rank_tibble %>%
     mutate(
       vfit = map2(
@@ -342,6 +349,9 @@ var_fc_from_best <- function(rank_tibble, VAR_data, levQ, custom_h = 12) {
       ),
       fc = map(vfit, forecast, h = custom_h),
       fc_rgdp_mean = map(fc, c("forecast", "rgdp", "mean")),
+      fc_rgdp_mean = map(fc_rgdp_mean, ts, 
+                         start = c(start_year_fc, start_quarter_fc),
+                         frequency = 4),
       ee1 = map(map(fc_rgdp_mean, calc_ee, levQ = levQ), "ee1"),
       ee2 = map(map(fc_rgdp_mean, calc_ee, levQ = levQ), "ee2"),
       bp1 = map(map(fc_rgdp_mean, calc_bp, levQ = levQ), "bp1"),
