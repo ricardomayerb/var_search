@@ -43,10 +43,24 @@ un_yoy_ts <- function(init_lev, vec_yoy) {
   un_yoy_vec <- y_vec[(n_init + 1):(n_init + n_yoy)]
   
   this_year <- as.integer(floor(time(vec_yoy)))
+  
+  # print("time(vec_yoy) in un_yoy_ts")
+  # print(time(vec_yoy))
+  
+  
+  # print("this_year in un_yoy_ts")
+  # print(this_year)
+  
   this_quarter <- as.integer(4 * (time(vec_yoy) - this_year + 0.25))
-  un_yoy_ts <- ts(un_yoy_vec, start = c(first(this_year), first(this_quarter)),
-                  end = c(last(this_year), last(this_quarter)),
-                  frequency = 4)
+
+  # print("this_quarter in un_yoy_ts")
+  # print(this_quarter)
+  
+  this_start <- c(first(this_year), first(this_quarter))
+  # print("this_start in un_yoy_ts")
+  # print(this_start)
+  
+  un_yoy_ts <- ts(un_yoy_vec, start = this_start, frequency = 4)
   return(un_yoy_ts)
 }
 
@@ -101,8 +115,36 @@ cv_obs_fc_back_from_diff <- function(yoy_ts, diff_ts, training_length,
     this_training_end_y <- this_training_end_yq[1]
     this_training_end_q <- this_training_end_yq[2]
     
-    this_year_before_train_end <- c(this_training_end_y-1, this_training_end_q)
+    decimal_q <- (this_training_end_q/4) - 0.25
+    decimal_yq <- this_training_end_y + decimal_q
+    new_decimal_yq <- decimal_yq - 0.75
     
+    this_last_year_training_y <- floor(new_decimal_yq)
+    this_last_year_training_q <- 4*(new_decimal_yq - floor(new_decimal_yq) + 0.25)
+ 
+    this_year_before_train_end <- c(this_last_year_training_y, 
+                                    this_last_year_training_q)
+    
+    # print("c(this_training_end_y, this_training_end_q)")
+    # print(c(this_training_end_y, this_training_end_q))
+    # 
+    # print("decimal_q")
+    # print(decimal_q)
+    # 
+    # print("decimal_yq")
+    # print(decimal_yq)
+    # 
+    # print("this_last_year_training_y")
+    # print(this_last_year_training_y)
+    # 
+    # print("this_last_year_training_q")
+    # print(this_last_year_training_q)
+    # 
+    # 
+    # 
+    # print("this_year_before_train_end")
+    # print(this_year_before_train_end)
+
     this_diff_fc <- cv_fcs_one_model[[i]]
     
     this_last_yoy_tra <- window(yoy_ts, start = this_training_end_yq,
@@ -114,29 +156,43 @@ cv_obs_fc_back_from_diff <- function(yoy_ts, diff_ts, training_length,
                             end = this_test_end_yq)
     this_test_yoy_rgdp <- this_test_yoy[, "rgdp"]
     
+
+    
+    # print("this_training_end_yq")
+    # print(this_training_end_yq)
+    
+        
     this_last_year_of_train_level <- window(level_ts, 
                                       start = this_year_before_train_end,
                                       end = this_training_end_yq)
     
     this_last_year_of_train_level_rgdp <- this_last_year_of_train_level[, "rgdp"]
- 
+
+    # print("this_last_year_of_train_level_rgdp")
+    # print(this_last_year_of_train_level_rgdp) 
+
     this_diff_fc_rgdp <- this_diff_fc
     
-    this_yoy_fc_rgdp <-  this_last_yoy_tra_rgdp[1] + cumsum(this_diff_fc_rgdp)
-    alt_this_yoy_fc_rgdp <-  un_diff(last_undiffed = this_last_yoy_tra_rgdp[1], 
+    # this_yoy_fc_rgdp <-  this_last_yoy_tra_rgdp[1] + cumsum(this_diff_fc_rgdp)
+    this_yoy_fc_rgdp <-  un_diff(last_undiffed = this_last_yoy_tra_rgdp[1], 
                                      diffed_ts = this_diff_fc_rgdp)
     alt_ts_this_yoy_fc_rgdp <-  un_diff_ts(last_undiffed = this_last_yoy_tra_rgdp[1], 
                                      diffed_ts = this_diff_fc_rgdp)
     
-
     this_yoy_error <- this_test_yoy_rgdp - this_yoy_fc_rgdp
-    alt_this_yoy_error <- this_test_yoy_rgdp - alt_this_yoy_fc_rgdp
     alt_ts_this_yoy_error <- this_test_yoy_rgdp - alt_ts_this_yoy_fc_rgdp
     
     this_level_fc_rgdp <- un_yoy(init_lev = this_last_year_of_train_level_rgdp,
                                  vec_yoy = this_yoy_fc_rgdp)  
-    alt_ts_this_level_fc_rgdp <- un_yoy_ts(init_lev = this_last_year_of_train_level_rgdp,
-                                 vec_yoy = this_yoy_fc_rgdp)  
+    
+    # alt_ts_this_level_fc_rgdp <- un_yoy_ts(init_lev = this_last_year_of_train_level_rgdp,
+    #                              vec_yoy = this_yoy_fc_rgdp)  
+    # 
+    # print("this_level_fc_rgdp")
+    # print(this_level_fc_rgdp)
+    # 
+    # print("alt_ts_this_level_fc_rgdp")
+    # print(alt_ts_this_level_fc_rgdp)
     
     # print(alt_ts_this_level_fc_rgdp)
     # print(alt_ts_this_yoy_fc_rgdp)
@@ -144,6 +200,13 @@ cv_obs_fc_back_from_diff <- function(yoy_ts, diff_ts, training_length,
     this_test_level <- window(level_ts, start = this_test_start_yq,
                             end = this_test_end_yq)
     this_test_level_rgdp <- this_test_level[, "rgdp"]
+    
+    # print("this_test_level_rgdp")
+    # print(this_test_level_rgdp)
+    # 
+    # print("level_ts[, rgdp]")
+    # print(level_ts[, "rgdp"])
+    
 
     this_level_error <- this_test_level_rgdp - this_level_fc_rgdp 
     # alt_ts_this_level_error <- this_test_level_rgdp - alt_ts_this_level_fc_rgdp 
@@ -151,10 +214,8 @@ cv_obs_fc_back_from_diff <- function(yoy_ts, diff_ts, training_length,
     cv_last_tra_obs_yoy[[i]] <- this_last_yoy_tra_rgdp
     
     cv_test_set_obs_yoy[[i]] <- this_test_yoy_rgdp
-    # cv_errors_yoy[[i]] <- this_yoy_error
-    # cv_fcs_yoy[[i]] <- this_yoy_fc_rgdp
-    cv_errors_yoy[[i]] <- alt_this_yoy_error
-    cv_fcs_yoy[[i]] <- alt_this_yoy_fc_rgdp
+    cv_errors_yoy[[i]] <- this_yoy_error
+    cv_fcs_yoy[[i]] <- this_yoy_fc_rgdp
     
     cv_test_set_obs_level[[i]] <- this_test_level_rgdp
     # cv_errors_level[[i]] <- this_level_error

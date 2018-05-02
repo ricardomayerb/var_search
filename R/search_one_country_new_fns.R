@@ -44,13 +44,21 @@ diff_yoy_data_ts <- data_qm_mts_log_yoy_diff[[this_country]]
 variable_names <- colnames(yoy_data_ts)
 ncolumns <- ncol(yoy_data_ts)
 
-this_bt <- 1.4
+this_bt <- 1.2
 vec_max_lags <- c(1, 2, 3, 4)
-vec_n_varsize <- c(3, 4)
+vec_n_varsize <- c(2, 3, 4)
 n_best <- 5
-number_of_cv <- 8
+number_of_cv <- 10
 fc_horizon <- 6
 train_span <- 30
+
+if (train_span+fc_horizon+number_of_cv > nrow(diff_yoy_data_ts)) {
+  
+  print("not enough obs")
+  
+  stop()
+  
+}
 
 target_rgdp <- c("rgdp")
 # vec_a_priori_variables <- c("rpc")
