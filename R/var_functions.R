@@ -172,25 +172,10 @@ try_sizes_vbls_lags <- function(var_data, yoy_data, level_data, target_v, vec_si
         model_number <- model_number + 1
         this_lag <- vec_lags[k]
 
-        # print(paste("Model nubmer", model_number))
-        # 
-        # print(paste("i:", i))
-        # print(paste("j:", j))
-        # print(paste("k:", k))
-        # 
-        # print(paste("vec size:", this_size))
-        # print("free vars:")
-        # print(vec_of_other_vbls)
-        # print("endo vbls:")
-        # print(vbls_for_var)
-        # print(paste("lag = ", this_lag))
-        
         sub_data = var_data[, vbls_for_var]
 
         sub_data_tk_index <- tk_index(var_data, timetk_idx = TRUE)
-        
-        # this_var_obj <- vars::VAR(y = sub_data, p = this_lag, type = "const")
-        
+
         this_cv <- var_cv(var_data = sub_data, timetk_idx = FALSE,
                           external_idx = sub_data_tk_index, this_p = this_lag,
                           this_type = "const", h_max = h_max,
