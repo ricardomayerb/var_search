@@ -123,25 +123,42 @@ cv_obs_fc_back_from_diff <- function(yoy_ts, diff_ts, training_length,
     this_diff_fc_rgdp <- this_diff_fc
     
     this_yoy_fc_rgdp <-  this_last_yoy_tra_rgdp[1] + cumsum(this_diff_fc_rgdp)
+    alt_this_yoy_fc_rgdp <-  un_diff(last_undiffed = this_last_yoy_tra_rgdp[1], 
+                                     diffed_ts = this_diff_fc_rgdp)
+    alt_ts_this_yoy_fc_rgdp <-  un_diff_ts(last_undiffed = this_last_yoy_tra_rgdp[1], 
+                                     diffed_ts = this_diff_fc_rgdp)
+    
 
     this_yoy_error <- this_test_yoy_rgdp - this_yoy_fc_rgdp
-
+    alt_this_yoy_error <- this_test_yoy_rgdp - alt_this_yoy_fc_rgdp
+    alt_ts_this_yoy_error <- this_test_yoy_rgdp - alt_ts_this_yoy_fc_rgdp
+    
     this_level_fc_rgdp <- un_yoy(init_lev = this_last_year_of_train_level_rgdp,
                                  vec_yoy = this_yoy_fc_rgdp)  
+    alt_ts_this_level_fc_rgdp <- un_yoy_ts(init_lev = this_last_year_of_train_level_rgdp,
+                                 vec_yoy = this_yoy_fc_rgdp)  
+    
+    # print(alt_ts_this_level_fc_rgdp)
+    # print(alt_ts_this_yoy_fc_rgdp)
     
     this_test_level <- window(level_ts, start = this_test_start_yq,
                             end = this_test_end_yq)
     this_test_level_rgdp <- this_test_level[, "rgdp"]
 
     this_level_error <- this_test_level_rgdp - this_level_fc_rgdp 
-
+    # alt_ts_this_level_error <- this_test_level_rgdp - alt_ts_this_level_fc_rgdp 
+    
     cv_last_tra_obs_yoy[[i]] <- this_last_yoy_tra_rgdp
     
     cv_test_set_obs_yoy[[i]] <- this_test_yoy_rgdp
-    cv_errors_yoy[[i]] <- this_yoy_error
-    cv_fcs_yoy[[i]] <- this_yoy_fc_rgdp
-
+    # cv_errors_yoy[[i]] <- this_yoy_error
+    # cv_fcs_yoy[[i]] <- this_yoy_fc_rgdp
+    cv_errors_yoy[[i]] <- alt_this_yoy_error
+    cv_fcs_yoy[[i]] <- alt_this_yoy_fc_rgdp
+    
     cv_test_set_obs_level[[i]] <- this_test_level_rgdp
+    # cv_errors_level[[i]] <- this_level_error
+    # cv_fcs_level[[i]] <- this_level_fc_rgdp
     cv_errors_level[[i]] <- this_level_error
     cv_fcs_level[[i]] <- this_level_fc_rgdp
     
