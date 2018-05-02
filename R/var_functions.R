@@ -252,7 +252,7 @@ try_sizes_vbls_lags <- function(var_data, yoy_data, level_data, target_v, vec_si
   print(paste("CV repetitions:", number_of_cv))
   print(paste("Total estimations and fcs:", number_of_cv*model_number))
   
-  cv_objects <- results_all_models %>% select(cv_vbl_names, cv_lag, cv_errors, cv_test_data,
+  cv_objects <- results_all_models %>% dplyr::select(cv_vbl_names, cv_lag, cv_errors, cv_test_data,
                                    cv_fcs) %>% 
     rename(variables = cv_vbl_names, lags = cv_lag)
   

@@ -97,7 +97,7 @@ tictoc::tic()
 est_and_fcs <- var_fc_from_best(rank_tibble = models_and_accu,
                                 VAR_data = diff_yoy_data_ts, 
                                 levQ = yoy_data_ts, custom_h = 7) %>% 
-  select(-c(accu_diff_yoy, accu_yoy, accu_lev)) %>% 
+  dplyr::select(-c(accu_diff_yoy, accu_yoy, accu_lev)) %>% 
   mutate(fc_rgdp_mean_yoy = map(fc_rgdp_mean, 
                                 function(x) un_diff_ts(last_yoy_rgdp, x)),
          fc_rgdp_mean_level = map(fc_rgdp_mean_yoy, 
