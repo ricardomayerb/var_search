@@ -323,7 +323,10 @@ var_fc_from_best <- function(rank_tibble, VAR_data, levQ, custom_h = 12) {
   end_time_vardata <- VAR_data %>% time %>% last
   start_time_fc <- end_time_vardata + 0.25
   start_year_fc <- floor(start_time_fc)
-  start_quarter_fc <- as.integer(4*(start_time_fc - start_year_fc))
+  start_quarter_fc <- as.integer(4*(start_time_fc - start_year_fc + 0.25))
+  
+  print("start_quarter_fc")
+  print(start_quarter_fc)
   
   
   VARs_from_best_inputs <- rank_tibble %>%

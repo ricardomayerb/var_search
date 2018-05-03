@@ -218,8 +218,6 @@ cv_obs_fc_back_from_diff <- function(yoy_ts, diff_ts, training_length,
     cv_fcs_yoy[[i]] <- this_yoy_fc_rgdp
     
     cv_test_set_obs_level[[i]] <- this_test_level_rgdp
-    # cv_errors_level[[i]] <- this_level_error
-    # cv_fcs_level[[i]] <- this_level_fc_rgdp
     cv_errors_level[[i]] <- this_level_error
     cv_fcs_level[[i]] <- this_level_fc_rgdp
     
