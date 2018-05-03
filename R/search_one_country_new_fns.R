@@ -12,7 +12,7 @@ general_variables_to_drop <- list(c("year", "quarter", "hlookup", "rgdp_sa", "tr
                                     "vta_auto", "exist"))
 # to make the data work we have to delete "m2" for argentina, "imp_int", "imp_k" for Ecuador and 
 # "imp_consumer", "imp_intermediate", "imp_capital" for Mexico
-extra_vars_to_drop <- list(Argentina = c("m2", "", ""), Bolivia = c("igae", "", ""), Brasil = c("", "", ""), 
+extra_vars_to_drop <- list(Argentina = c("m2", "ri", ""), Bolivia = c("igae", "", ""), Brasil = c("", "", ""), 
                            Chile = c("", "", ""), Colombia = c("", "", ""), Ecuador = c("imp_int", "imp_k", ""), 
                            Mexico = c("imp_consumer", "imp_intermediate", "imp_capital"), Paraguay = c("", "", ""), 
                            Peru = c("", "", ""), Uruguay = c("cred", "", ""))
@@ -35,22 +35,32 @@ data_qm_mts_log_yoy_diff <- map(data_qm_xts_log_yoy_diff, to_ts_q)
 # OK countries: bol, bra, chl, col, par, per, ury
 # Singular CCM problems: arg, ecu, mex
 
-this_country_name <- "Uruguay"  
+# this_country_name <- "Uruguay"  
+this_country_name <- "Argentina"  
 this_country <- this_country_name
 level_data_ts <- data_qm_mts_log[[this_country]]
 yoy_data_ts <- data_qm_mts_log_yoy[[this_country]]
 diff_yoy_data_ts <- data_qm_mts_log_yoy_diff[[this_country]]
 
+# excluded <- c("ri")
+# position_exluded <- colnames(level_data_ts) %in% excluded
+# level_data_ts  <- level_data_ts[, ! position_exluded]
+# diff_yoy_data_ts  <- diff_yoy_data_ts[, ! position_exluded]
+# yoy_data_ts  <- yoy_data_ts[, ! position_exluded]
+
+colnames(diff_yoy_data_ts)
+
 variable_names <- colnames(yoy_data_ts)
 ncolumns <- ncol(yoy_data_ts)
 
-this_bt <- 1.1
+this_bt <- 1.5
+
 vec_max_lags <- c(1, 2, 3, 4)
 vec_n_varsize <- c(2, 3, 4)
 n_best <- 5
-number_of_cv <- 10
+number_of_cv <- 8
 fc_horizon <- 6
-train_span <- 30
+train_span <- 25
 
 if (train_span+fc_horizon+number_of_cv > nrow(diff_yoy_data_ts)) {
   
