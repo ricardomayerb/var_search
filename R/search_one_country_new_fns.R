@@ -44,7 +44,7 @@ diff_yoy_data_ts <- data_qm_mts_log_yoy_diff[[this_country]]
 variable_names <- colnames(yoy_data_ts)
 ncolumns <- ncol(yoy_data_ts)
 
-this_bt <- 1.2
+this_bt <- 1.1
 vec_max_lags <- c(1, 2, 3, 4)
 vec_n_varsize <- c(2, 3, 4)
 n_best <- 5
@@ -179,55 +179,55 @@ walk(foo, print)
 grid.draw(foo[[4]])
 
 
-one_fc_yoy <- un_diff_ts(last_yoy_rgdp, one_fc_diff)
-one_fc_yoy
-
-one_fc_level <- un_yoy_ts(last_level_rgdp, one_fc_yoy)
-one_fc_level
-
-level_foo <- subset(level_data_ts_rgdp, start = n_level - 10, end = n_level)
-level_foo
-
-yoy_foo <- diff(level_foo, lag = 4, na.pad = FALSE)
-yoy_foo
-
-diff_yoy_foo <- diff(yoy_foo, lag = 1, na.pad = FALSE)
-diff_yoy_foo
-
-# supongamos 2016 q4 es la ultima obs y que 2017 q1 q2 q3 son fcs
-level_foo
-level_foo[8]
-
-yoy_foo
-yoy_foo[4]
-
-diff_yoy_foo
-diff_yoy_foo[3]
-
-verify_un_diff <- un_diff(yoy_foo[4], diff_yoy_foo[4:6])
-verify_un_diff
-yoy_foo[5:7]
-
-verify_un_yoy <- un_yoy(level_foo[5:8], verify_un_diff)
-verify_un_yoy
-level_foo[9:11]
-
-this_year <- as.integer(floor(time(diff_yoy_foo)))
-this_quarter <- as.integer(4*(time(diff_yoy_foo) - floor(time(diff_yoy_foo)) + 0.25))
-this_year  
-this_quarter
-
-# level_foo[5] - level_foo[1]
-# level_foo[11] - level_foo[7]
-
-
-# cv_objects <- var_res %>% select(cv_vbl_names, cv_lag, cv_errors, cv_test_data,
-#                                  cv_fcs) %>% 
-#   rename(variables = cv_vbl_names, lags = cv_lag)
+# one_fc_yoy <- un_diff_ts(last_yoy_rgdp, one_fc_diff)
+# one_fc_yoy
 # 
-# rmse_and_ranking <- var_res %>% 
-#   select(cv_vbl_names, cv_lag, accu_diff_yoy, accu_yoy, accu_lev,
-#          diff_ranking, yoy_ranking, level_ranking) %>% 
-#   rename(variables = cv_vbl_names, lags = cv_lag)
-
-  
+# one_fc_level <- un_yoy_ts(last_level_rgdp, one_fc_yoy)
+# one_fc_level
+# 
+# level_foo <- subset(level_data_ts_rgdp, start = n_level - 10, end = n_level)
+# level_foo
+# 
+# yoy_foo <- diff(level_foo, lag = 4, na.pad = FALSE)
+# yoy_foo
+# 
+# diff_yoy_foo <- diff(yoy_foo, lag = 1, na.pad = FALSE)
+# diff_yoy_foo
+# 
+# # supongamos 2016 q4 es la ultima obs y que 2017 q1 q2 q3 son fcs
+# level_foo
+# level_foo[8]
+# 
+# yoy_foo
+# yoy_foo[4]
+# 
+# diff_yoy_foo
+# diff_yoy_foo[3]
+# 
+# verify_un_diff <- un_diff(yoy_foo[4], diff_yoy_foo[4:6])
+# verify_un_diff
+# yoy_foo[5:7]
+# 
+# verify_un_yoy <- un_yoy(level_foo[5:8], verify_un_diff)
+# verify_un_yoy
+# level_foo[9:11]
+# 
+# this_year <- as.integer(floor(time(diff_yoy_foo)))
+# this_quarter <- as.integer(4*(time(diff_yoy_foo) - floor(time(diff_yoy_foo)) + 0.25))
+# this_year  
+# this_quarter
+# 
+# # level_foo[5] - level_foo[1]
+# # level_foo[11] - level_foo[7]
+# 
+# 
+# # cv_objects <- var_res %>% select(cv_vbl_names, cv_lag, cv_errors, cv_test_data,
+# #                                  cv_fcs) %>% 
+# #   rename(variables = cv_vbl_names, lags = cv_lag)
+# # 
+# # rmse_and_ranking <- var_res %>% 
+# #   select(cv_vbl_names, cv_lag, accu_diff_yoy, accu_yoy, accu_lev,
+# #          diff_ranking, yoy_ranking, level_ranking) %>% 
+# #   rename(variables = cv_vbl_names, lags = cv_lag)
+# 
+#   
