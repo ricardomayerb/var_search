@@ -71,9 +71,29 @@ plot(models_and_accu$accu_diff_yoy, models_and_accu$accu_yoy)
 plot(models_and_accu$accu_diff_yoy, models_and_accu$accu_lev)
 
 
-moac_groups <- models_and_accu %>% 
-  mutate(rank_group = if_else(diff_ranking <= 30, "diff_yoy", 
-                              if_else(yoy_ranking <= 30, "yoy", "level"))) %>% 
-  group_by(rank_group, v) %>% 
-  mutate(n_in_group = n())
+# moac_groups <- models_and_accu %>% 
+#   mutate(rank_group = if_else(diff_ranking <= 30, "diff_yoy", 
+#                               if_else(yoy_ranking <= 30, "yoy", "level"))) %>% 
+#   group_by(rank_group, v) %>% 
+#   mutate(n_in_group = count())
 
+
+
+vbl_dyl <- full_join(vbl_diff, vbl_yoy, by = "v") %>% 
+  full_join(vbl_level, by = "v") %>% 
+  filter(v != "rgdp") %>% 
+  gather(key = "group", value = "n", -v) %>% 
+  mutate(n = ifelse(is.na(n), 0, n) 
+         ) %>% 
+  arrange(n_diff, n_yoy)
+
+vbl_dyl$group <- factor(vbl_dyl$group, 
+                    levels = c("n_level", "n_yoy", "n_diff" ),
+                    ordered = TRUE)
+
+
+sb <- ggplot(vbl_dyl, aes(x = v, y = n, fill = group)) +  
+  geom_bar(stat = "identity") + 
+  coord_flip()
+
+print(sb)
