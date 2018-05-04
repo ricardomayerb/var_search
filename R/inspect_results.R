@@ -77,15 +77,22 @@ plot(models_and_accu$accu_diff_yoy, models_and_accu$accu_lev)
 #   group_by(rank_group, v) %>% 
 #   mutate(n_in_group = count())
 
+vbl_dyl2 <- full_join(vbl_diff, vbl_yoy, by = "v") %>% 
+  full_join(vbl_level, by = "v") %>% 
+  filter(v != "rgdp") %>% 
+  arrange(desc(n_diff))
+
 
 
 vbl_dyl <- full_join(vbl_diff, vbl_yoy, by = "v") %>% 
   full_join(vbl_level, by = "v") %>% 
   filter(v != "rgdp") %>% 
   gather(key = "group", value = "n", -v) %>% 
-  mutate(n = ifelse(is.na(n), 0, n) 
+  mutate(n = ifelse(is.na(n), 0, n),
+         n_diff_o = ifelse(group == "n_diff", yes = n, 
+                            no = ifelse(group == "n_yoy", 0, -1))
          ) %>% 
-  arrange(n_diff, n_yoy)
+  arrange(group)
 
 vbl_dyl$group <- factor(vbl_dyl$group, 
                     levels = c("n_level", "n_yoy", "n_diff" ),
@@ -95,5 +102,15 @@ vbl_dyl$group <- factor(vbl_dyl$group,
 sb <- ggplot(vbl_dyl, aes(x = v, y = n, fill = group)) +  
   geom_bar(stat = "identity") + 
   coord_flip()
-
 print(sb)
+
+sb2 <- ggplot(vbl_dyl) +  geom_col(aes(x=v, y=n, fill = factor(group))) + 
+  coord_flip()
+print(sb2)
+
+
+sb3 <- ggplot(vbl_dyl2) +  geom_col(aes(x=fct_reorder(v, n_diff), y=n_diff)) +  
+  geom_col(aes(x=v, y=n_yoy), fill = "red") +
+  geom_col(aes(x=v, y=n_level), fill = "blue") +
+  coord_flip()
+print(sb3)
