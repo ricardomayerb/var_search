@@ -6,12 +6,89 @@ load("./data/arg_200k_estimation.RData")
 
 ensemble_vbls_lags <- function(list_of_vbls, list_of_lags, type = "cons",
                                h_max = 8, is_diff_yoy = TRUE) {
-  
+  a = 1
 }
 
 models_and_accu <- models_and_accu %>% 
   mutate(accu_lev = map(accu_lev, unlist),
          accu_yoy = map(accu_yoy, unlist))
+
+
+ma_diff_yoy <- models_and_accu %>% 
+  filter(diff_ranking <= 30) %>% 
+  dplyr::select(variables, lags) 
+v_diff_yoy <- reduce(ma_diff_yoy[["variables"]], c)
+lag_diff_yoy <- reduce(ma_diff_yoy[["lags"]], c)
+
+ma_yoy <- models_and_accu %>% 
+  filter(yoy_ranking <= 30) %>% 
+  dplyr::select(variables, lags)
+v_yoy <- reduce(ma_yoy[["variables"]], c)
+lag_yoy <- reduce(ma_yoy[["lags"]], c)
+
+ma_level <- models_and_accu %>% 
+  filter(level_ranking <= 30) %>% 
+  dplyr::select(variables, lags)
+v_level_yoy <- reduce(ma_level[["variables"]], c)
+lag_level_yoy <- reduce(ma_level[["lags"]], c)
+
+
+plots_variables_and_lags <- function(models_and_accu, type = "all") {
+  
+  models_and_accu <- models_and_accu %>% 
+    mutate(accu_lev = map(accu_lev, unlist),
+           accu_yoy = map(accu_yoy, unlist))
+  
+  sel_variables <- models_and_accu$variables
+  sel_variables <- reduce(sel_variables, c)
+  sel_lags <- models_and_accu$lags
+  sel_lags <- reduce(sel_lags, c)
+  
+  from_diff_yoy <- models_and_accu %>% 
+    filter(diff_ranking <= 30) %>% 
+    dplyr::select(variables, lags) 
+  
+  from_yoy <- models_and_accu %>% 
+    filter(yoy_ranking <= 30) %>% 
+    dplyr::select(variables, lags)
+  
+  from_level <- models_and_accu %>% 
+    filter(level_ranking <= 30) %>% 
+    dplyr::select(variables, lags)
+  
+  
+  
+  v_dyl <- full_join(v1, v2, by = "v") %>% 
+    full_join(v3, by = "v") %>% 
+    filter(v != "rgdp") %>% 
+    gather(key = "group", value = "n", -v) %>% 
+    mutate(n = ifelse(is.na(n), 0, n),
+           n_diff_o = ifelse(group == "n_diff", yes = n, 
+                             no = ifelse(group == "n_yoy", 0, -1))
+    ) %>% 
+    arrange(desc(n_diff_o)) %>% 
+    mutate(v = factor(v, levels = unique(v)),
+           group = factor(group, levels = c("n_level", "n_yoy", "n_diff" ))
+    )
+  
+  sb <- ggplot(vbl_dyl, aes(x = v, y = n, fill = group)) +  
+    geom_bar(stat = "identity") + 
+    coord_flip()
+  
+  
+  
+}
+
+
+models_and_accu <- models_and_accu %>% 
+  mutate(accu_lev = map(accu_lev, unlist),
+         accu_yoy = map(accu_yoy, unlist))
+
+sel_variables <- models_and_accu$variables
+sel_lags <- models_and_accu$lags
+sel_variables <- reduce(sel_variables, c)
+sel_lags <- reduce(sel_lags, c)
+
 
 
 plot_variables <- function(models_and_accu) {
@@ -37,19 +114,12 @@ plot_variables <- function(models_and_accu) {
 
 }
 
-g_all <-  plot_variables(models_and_accu = models_and_accu)
+g_all <-  plot_variables_one_group(models_and_accu = models_and_accu)
 print(g_all[[1]])
 vbl_all <- g_all[[2]]
 
 
-moac_diff_yoy <- models_and_accu %>% 
-  filter(diff_ranking <= 30)
 
-moac_yoy <- models_and_accu %>% 
-  filter(yoy_ranking <= 30)
-
-moac_level <- models_and_accu %>% 
-  filter(level_ranking <= 30)
 
 g_diff <-  plot_variables(models_and_accu = moac_diff_yoy)
 print(g_diff[[1]])
@@ -71,46 +141,38 @@ plot(models_and_accu$accu_diff_yoy, models_and_accu$accu_yoy)
 plot(models_and_accu$accu_diff_yoy, models_and_accu$accu_lev)
 
 
-# moac_groups <- models_and_accu %>% 
-#   mutate(rank_group = if_else(diff_ranking <= 30, "diff_yoy", 
-#                               if_else(yoy_ranking <= 30, "yoy", "level"))) %>% 
-#   group_by(rank_group, v) %>% 
-#   mutate(n_in_group = count())
 
-vbl_dyl2 <- full_join(vbl_diff, vbl_yoy, by = "v") %>% 
-  full_join(vbl_level, by = "v") %>% 
-  filter(v != "rgdp") %>% 
-  arrange(desc(n_diff))
-
-
-
-vbl_dyl <- full_join(vbl_diff, vbl_yoy, by = "v") %>% 
-  full_join(vbl_level, by = "v") %>% 
-  filter(v != "rgdp") %>% 
-  gather(key = "group", value = "n", -v) %>% 
-  mutate(n = ifelse(is.na(n), 0, n),
-         n_diff_o = ifelse(group == "n_diff", yes = n, 
-                            no = ifelse(group == "n_yoy", 0, -1))
-         ) %>% 
-  arrange(group)
-
-vbl_dyl$group <- factor(vbl_dyl$group, 
-                    levels = c("n_level", "n_yoy", "n_diff" ),
-                    ordered = TRUE)
-
-
-sb <- ggplot(vbl_dyl, aes(x = v, y = n, fill = group)) +  
-  geom_bar(stat = "identity") + 
-  coord_flip()
-print(sb)
-
-sb2 <- ggplot(vbl_dyl) +  geom_col(aes(x=v, y=n, fill = factor(group))) + 
-  coord_flip()
-print(sb2)
+plot_3_groups <- function(v1, v2, v3, draw = TRUE) {
+  
+  vbl_dyl <- full_join(v1, v2, by = "v") %>% 
+    full_join(v3, by = "v") %>% 
+    filter(v != "rgdp") %>% 
+    gather(key = "group", value = "n", -v) %>% 
+    mutate(n = ifelse(is.na(n), 0, n),
+           n_diff_o = ifelse(group == "n_diff", yes = n, 
+                             no = ifelse(group == "n_yoy", 0, -1))
+    ) %>% 
+    arrange(desc(n_diff_o)) %>% 
+    mutate(v = factor(v, levels = unique(v)),
+           group = factor(group, levels = c("n_level", "n_yoy", "n_diff" ))
+    )
+  
+  sb <- ggplot(vbl_dyl, aes(x = v, y = n, fill = group)) +  
+    geom_bar(stat = "identity") + 
+    coord_flip()
+  
+  if (draw) {
+    print(sb)
+    
+  }
+  
+  return(sb)
+  
+}
 
 
-sb3 <- ggplot(vbl_dyl2) +  geom_col(aes(x=fct_reorder(v, n_diff), y=n_diff)) +  
-  geom_col(aes(x=v, y=n_yoy), fill = "red") +
-  geom_col(aes(x=v, y=n_level), fill = "blue") +
-  coord_flip()
-print(sb3)
+p3d <- plot_3_groups(vbl_diff, vbl_yoy, vbl_level)
+
+
+
+
