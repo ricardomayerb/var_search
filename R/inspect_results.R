@@ -1,4 +1,5 @@
 library(tidyverse)
+library(ggstance)
 # library()
 # load("~/GitHub/var_search/data/arg_200k_estimation.RData")
 
@@ -9,66 +10,196 @@ ensemble_vbls_lags <- function(list_of_vbls, list_of_lags, type = "cons",
   
 }
 
-models_and_accu <- models_and_accu %>% 
-  mutate(accu_lev = map(accu_lev, unlist),
-         accu_yoy = map(accu_yoy, unlist))
+models_and_accu <- models_and_accu %>%  
+  mutate(n_variables = map(variables, length))
 
-
-plot_variables <- function(models_and_accu) {
-  
-  sel_variables <- models_and_accu$variables
-  sel_lags <- models_and_accu$variables
-  sel_variables <- reduce(sel_variables, c)
-  
-  # table_variables <- sort(table(sel_variables), decreasing = TRUE)
-  # barplot(table_variables, horiz = TRUE)
-  
-  vbl_n <- tibble(v = sel_variables) %>% group_by(v)  %>% 
-    summarise(n = n()) %>% 
-    arrange(desc(n))
-
-  vbl_n$v <- factor(vbl_n$v, levels = vbl_n$v[order(-vbl_n$n, decreasing = TRUE)])
-  
-  g <- ggplot(data = vbl_n, aes(x = v, y = n)) + 
-    geom_bar(stat = "identity") + 
-    coord_flip()
-  
-  return(list(g, vbl_n))
-
-}
-
-g_all <-  plot_variables(models_and_accu = models_and_accu)
-print(g_all[[1]])
-vbl_all <- g_all[[2]]
-
-
-moac_diff_yoy <- models_and_accu %>% 
+ma_diff_yoy <- models_and_accu %>% 
   filter(diff_ranking <= 30)
 
-moac_yoy <- models_and_accu %>% 
+ma_yoy <- models_and_accu %>% 
   filter(yoy_ranking <= 30)
 
-moac_level <- models_and_accu %>% 
+ma_level <- models_and_accu %>% 
   filter(level_ranking <= 30)
 
-g_diff <-  plot_variables(models_and_accu = moac_diff_yoy)
-print(g_diff[[1]])
-vbl_diff <- g_diff[[2]]
-names(vbl_diff)[2] <- "n_diff"
+vbls_diff <- reduce(ma_diff_yoy$variables, c) 
+count_vbls_diff <- vbls_diff %>% tibble(v = .) %>% 
+  group_by(v) %>% summarise(n_diff = n())
 
-g_yoy <-  plot_variables(models_and_accu = moac_yoy)
-print(g_yoy[[1]])
-vbl_yoy <- g_yoy[[2]]
-names(vbl_yoy)[2] <- "n_yoy"
+vbls_yoy <- reduce(ma_yoy$variables, c)
+count_vbls_yoy <- vbls_yoy %>% tibble(v = .) %>% 
+  group_by(v) %>% summarise(n_yoy = n())
 
-g_level <-  plot_variables(models_and_accu = moac_level)
-print(g_level[[1]])
-vbl_level <- g_level[[2]]
-names(vbl_level)[2] <- "n_level"
+vbls_level <- reduce(ma_level$variables, c)
+count_vbls_level <- vbls_level %>% tibble(v = .) %>% 
+  group_by(v) %>% summarise(n_level = n())
+
+n_endo_diff <- reduce(ma_diff_yoy$n_variables, c)
+count_n_endo_diff <- n_endo_diff %>% tibble(size = .) %>% 
+  group_by(size) %>% summarise(size_diff = n())
+
+n_endo_yoy <- reduce(ma_yoy$n_variables, c)
+count_n_endo_yoy <- n_endo_yoy %>% tibble(size = .) %>% 
+  group_by(size) %>% summarise(size_yoy = n())
+
+n_endo_level <- reduce(ma_level$n_variables, c)
+count_n_endo_level <- n_endo_level %>% tibble(size = .) %>% 
+  group_by(size) %>% summarise(size_level = n())
+
+lags_diff <- reduce(ma_diff_yoy$lags, c)
+count_lags_diff <- lags_diff %>% tibble(lag = .) %>% 
+  group_by(lag) %>% summarise(lag_diff = n())
+
+lags_yoy <- reduce(ma_yoy$lags, c)
+count_lags_yoy <- lags_yoy %>% tibble(lag = .) %>% 
+  group_by(lag) %>% summarise(lag_yoy = n())
+
+lags_level <- reduce(ma_level$lags, c)
+count_lags_level <- lags_level %>% tibble(lag = .) %>% 
+  group_by(lag) %>% summarise(lag_level = n())
+
+# vbls <- reduce(list(count_vbls_diff, count_vbls_yoy, count_vbls_level), 
+#                full_join, by = "v")  %>% 
+#   gather(key = "group", value = "n", -v) %>% 
+#   mutate(group = factor(group, levels = c( "n_level", "n_yoy", "n_diff")),
+#          v = factor(v, levels = unique(v)),
+#          v = fct_reorder2(v, group, n)) 
+
+vbls <- reduce(list(count_vbls_diff, count_vbls_yoy, count_vbls_level), 
+               full_join, by = "v")  %>% 
+  gather(key = "group", value = "n", -v) %>%
+  mutate(group = factor(group, levels = c( "n_level" , "n_yoy", "n_diff"))) %>% 
+  arrange(group, desc(n)) %>% 
+  mutate(v_order = row_number())
+
+g_vbls_facets <- ggplot(vbls, aes(x = v_order, y = n, fill = group)) +
+  geom_bar(stat = "identity", show.legend = FALSE) + 
+  facet_wrap(~ group, scales = "free") + 
+  ylab("Number of appearances in selected VARs") +
+  xlab("variable") + 
+  scale_x_continuous(
+    breaks = vbls$v_order,
+    labels = vbls$v,
+    expand = c(0,0)
+  ) +
+  coord_flip()
+print(g_vbls_facets)
+
+g_vbls_stacked <- ggplot(data = vbls, aes(x = fct_reorder2(v, group, n), 
+                                          weight = n, fill = group)) + 
+  geom_bar()  + 
+  coord_flip()
+print(g_vbls_stacked) 
 
 
-plot(models_and_accu$accu_diff_yoy, models_and_accu$accu_yoy)
-plot(models_and_accu$accu_diff_yoy, models_and_accu$accu_lev)
+
+
+endo <- reduce(list(count_n_endo_diff, count_n_endo_yoy, count_n_endo_level), 
+               full_join, by = "size") %>% 
+  gather(key = "group", value = "freq", -size) %>%
+  mutate(group = factor(group, levels = c( "size_level" , "size_yoy", "size_diff"))) %>% 
+  arrange(group, desc(freq)) %>% 
+  mutate(size_order = row_number())
+
+g_endo_facets <- ggplot(endo, aes(x = size_order, y = freq, fill = group)) +
+  geom_bar(stat = "identity", show.legend = FALSE) + 
+  facet_wrap(~ group) + 
+  ylab("Number of appearances in selected VARs") +
+  xlab("size") + 
+  scale_x_continuous(
+    breaks = endo$size_order,
+    labels = endo$size
+  ) +
+  coord_flip()
+print(g_endo_facets)
+
+g_endo_stacked <- ggplot(data = endo, aes(x = size, 
+                                          weight = freq, fill = group)) + 
+  geom_bar(position = "dodge") 
+print(g_endo_stacked)
+
+
+n_lags <- reduce(list(count_lags_diff, count_lags_yoy, count_lags_level), 
+               full_join, by = "lag") %>% 
+  gather(key = "group", value = "freq", -lag) %>%
+  mutate(group = factor(group, levels = c( "lag_level" , "lag_yoy", "lag_diff"))) %>% 
+  arrange(group, desc(freq)) %>% 
+  mutate(lag_order = row_number())
+
+g_lag_facets <- ggplot(n_lags, aes(x = lag_order, y = freq, fill = group)) +
+  geom_bar(stat = "identity", show.legend = FALSE) + 
+  facet_wrap(~ group, scales = "free_y") + 
+  ylab("Number of appearances in selected VARs") +
+  xlab("lags") + 
+  scale_x_continuous(
+    breaks = n_lags$lag_order,
+    labels = n_lags$lag
+  ) +
+  coord_flip()
+print(g_lag_facets)
+
+
+g_lag_stacked <- ggplot(data = n_lags, aes(x = lag, 
+                                          weight = freq, fill = group)) + 
+  geom_bar(position = "dodge") 
+print(g_lag_stacked)
+
+
+
+my_variables_table <- reduce(list(count_vbls_diff, count_vbls_yoy, count_vbls_level), 
+                             full_join, by = "v") %>% 
+  rename(variable = v,
+         fcs_diff_yoy = n_diff,
+         fcs_yoy = n_yoy,
+         fcs_level = n_level) %>% 
+  mutate(fcs_diff_yoy = ifelse(is.na(fcs_diff_yoy),  0, fcs_diff_yoy),
+         fcs_yoy = ifelse(is.na(fcs_yoy),  0, fcs_yoy),
+         fcs_level = ifelse(is.na(fcs_level),  0, fcs_level)
+         )
+
+my_variables_table
+
+
+g_diff_vs_yoy_best_diffs <- ggplot(data =  models_and_accu %>% filter(diff_ranking <= 30),
+                             aes(x = accu_diff_yoy, y = accu_yoy)) + 
+  geom_point()
+g_diff_vs_yoy_best_diffs
+
+
+g_diff_vs_lev_best_diffs <- ggplot(data =  models_and_accu %>% filter(diff_ranking <= 30),
+                                   aes(x = accu_diff_yoy, y = accu_lev)) + 
+  geom_point()
+g_diff_vs_lev_best_diffs
+
+
+g_diff_vs_yoy_best_yoys <- ggplot(data =  models_and_accu %>% filter(yoy_ranking <= 30),
+                                   aes(x = accu_yoy, y = accu_diff_yoy)) + 
+  geom_point()
+g_diff_vs_yoy_best_yoys
+
+
+g_lev_vs_yoy_best_lev <- ggplot(data =  models_and_accu %>% filter(level_ranking <= 30),
+                                 aes(x = accu_lev, y = accu_diff_yoy)) + 
+  geom_point()
+g_lev_vs_yoy_best_lev 
+
+
+g_best_diff_accu <- ggplot(data =  models_and_accu %>% filter(diff_ranking <= 30),
+                           aes(x = accu_diff_yoy)) + 
+  geom_histogram(bins = 7)
+print(g_best_diff_accu)
+
+g_best_yoy_accu <- ggplot(data =  models_and_accu %>% filter(yoy_ranking <= 30),
+                           aes(x = accu_yoy)) + 
+  geom_histogram(bins = 7)
+print(g_best_yoy_accu)
+
+g_best_lev_accu <- ggplot(data =  models_and_accu %>% filter(level_ranking <= 30),
+                          aes(x = accu_lev)) + 
+  geom_histogram(bins = 7)
+print(g_best_lev_accu)
+
+
 
 
 # moac_groups <- models_and_accu %>% 
@@ -77,40 +208,3 @@ plot(models_and_accu$accu_diff_yoy, models_and_accu$accu_lev)
 #   group_by(rank_group, v) %>% 
 #   mutate(n_in_group = count())
 
-vbl_dyl2 <- full_join(vbl_diff, vbl_yoy, by = "v") %>% 
-  full_join(vbl_level, by = "v") %>% 
-  filter(v != "rgdp") %>% 
-  arrange(desc(n_diff))
-
-
-
-vbl_dyl <- full_join(vbl_diff, vbl_yoy, by = "v") %>% 
-  full_join(vbl_level, by = "v") %>% 
-  filter(v != "rgdp") %>% 
-  gather(key = "group", value = "n", -v) %>% 
-  mutate(n = ifelse(is.na(n), 0, n),
-         n_diff_o = ifelse(group == "n_diff", yes = n, 
-                            no = ifelse(group == "n_yoy", 0, -1))
-         ) %>% 
-  arrange(group)
-
-vbl_dyl$group <- factor(vbl_dyl$group, 
-                    levels = c("n_level", "n_yoy", "n_diff" ),
-                    ordered = TRUE)
-
-
-sb <- ggplot(vbl_dyl, aes(x = v, y = n, fill = group)) +  
-  geom_bar(stat = "identity") + 
-  coord_flip()
-print(sb)
-
-sb2 <- ggplot(vbl_dyl) +  geom_col(aes(x=v, y=n, fill = factor(group))) + 
-  coord_flip()
-print(sb2)
-
-
-sb3 <- ggplot(vbl_dyl2) +  geom_col(aes(x=fct_reorder(v, n_diff), y=n_diff)) +  
-  geom_col(aes(x=v, y=n_yoy), fill = "red") +
-  geom_col(aes(x=v, y=n_level), fill = "blue") +
-  coord_flip()
-print(sb3)
