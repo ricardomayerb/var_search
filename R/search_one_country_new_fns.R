@@ -53,10 +53,10 @@ colnames(diff_yoy_data_ts)
 variable_names <- colnames(yoy_data_ts)
 ncolumns <- ncol(yoy_data_ts)
 
-this_bt <- 1.6
+this_bt <- 1.4
 
-vec_max_lags <- c(1, 2, 3)
-vec_n_varsize <- c(2, 3)
+vec_max_lags <- c(1, 2, 3, 4)
+vec_n_varsize <- c(2, 3, 4, 5)
 n_best <- 5
 number_of_cv <- 8
 fc_horizon <- 6
