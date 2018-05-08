@@ -230,7 +230,8 @@ try_sizes_vbls_lags <- function(var_data, yoy_data, level_data, target_v, vec_si
     arrange(unlist(accu_lev)) %>% 
     mutate(level_ranking = 1:n()) %>% 
     rename(accu_diff_yoy = mean_cv_rmse) %>% 
-    filter((diff_ranking <= 30) | (yoy_ranking <= 30) | (level_ranking <= 30))
+    filter((diff_ranking <= 50) | (yoy_ranking <= 50) |
+             (level_ranking <= 50))
   
   print(paste("Tried", len_lag, "different choices of lags per each combination"))
   print(paste("Number of models analyzed:", model_number))
