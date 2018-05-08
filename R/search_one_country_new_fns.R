@@ -53,7 +53,7 @@ colnames(diff_yoy_data_ts)
 variable_names <- colnames(yoy_data_ts)
 ncolumns <- ncol(yoy_data_ts)
 
-this_bt <- 1.4
+this_bt <- 1.5
 
 vec_max_lags <- c(1, 2, 3, 4)
 vec_n_varsize <- c(2, 3, 4, 5)
@@ -93,11 +93,11 @@ tictoc::toc()
 
 models_and_accu <- var_res[["accu_rankings_models"]]
 
-saveRDS(models_and_accu, "./data/arg_ma_long.rds")
+saveRDS(models_and_accu, "./data/arg_ma_long_bt15.rds")
 
 if (ret_cv) {
   cv_objects <- var_res[["cv_objects"]]
-  saveRDS(cv_objects, "./data/arg_cvobj_long.rds")
+  saveRDS(cv_objects, "./data/arg_cvobj_long_bt15.rds")
 }
 
 rm(var_res)
