@@ -12,7 +12,7 @@ general_variables_to_drop <- list(c("year", "quarter", "hlookup", "rgdp_sa", "tr
                                     "vta_auto", "exist"))
 # to make the data work we have to delete "m2" for argentina, "imp_int", "imp_k" for Ecuador and 
 # "imp_consumer", "imp_intermediate", "imp_capital" for Mexico
-extra_vars_to_drop <- list(Argentina = c("m2", "ri", "p_import"), Bolivia = c("igae", "", ""), Brasil = c("", "", ""), 
+extra_vars_to_drop <- list(Argentina = c("m2", "ri", ""), Bolivia = c("igae", "", ""), Brasil = c("", "", ""), 
                            Chile = c("", "", ""), Colombia = c("", "", ""), Ecuador = c("imp_int", "imp_k", ""), 
                            Mexico = c("imp_consumer", "imp_intermediate", "imp_capital"), Paraguay = c("", "", ""), 
                            Peru = c("", "", ""), Uruguay = c("cred", "", ""))
@@ -93,11 +93,11 @@ tictoc::toc()
 
 models_and_accu <- var_res[["accu_rankings_models"]]
 
-saveRDS(models_and_accu, "./data/arg_ma_long_bt19.rds")
+saveRDS(models_and_accu, "./data/arg_ma_long_bt18.rds")
 
 if (ret_cv) {
   cv_objects <- var_res[["cv_objects"]]
-  saveRDS(cv_objects, "./data/arg_cvobj_long_bt19.rds")
+  saveRDS(cv_objects, "./data/arg_cvobj_long_bt18.rds")
 }
 
 rm(var_res)
