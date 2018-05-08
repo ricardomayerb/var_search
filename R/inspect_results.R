@@ -1,85 +1,12 @@
 library(tidyverse)
-library(ggstance)
-# library()
-# load("~/GitHub/var_search/data/arg_200k_estimation.RData")
 
 load("./data/arg_200k_estimation.RData")
 
-ensemble_vbls_lags <- function(list_of_vbls, list_of_lags, type = "cons",
-                               h_max = 8, is_diff_yoy = TRUE) {
-  a = 1
-}
+
 
 models_and_accu <- models_and_accu %>% 
   mutate(accu_lev = map(accu_lev, unlist),
          accu_yoy = map(accu_yoy, unlist))
-
-
-ma_diff_yoy <- models_and_accu %>% 
-  filter(diff_ranking <= 30) %>% 
-  dplyr::select(variables, lags) 
-v_diff_yoy <- reduce(ma_diff_yoy[["variables"]], c)
-lag_diff_yoy <- reduce(ma_diff_yoy[["lags"]], c)
-
-ma_yoy <- models_and_accu %>% 
-  filter(yoy_ranking <= 30) %>% 
-  dplyr::select(variables, lags)
-v_yoy <- reduce(ma_yoy[["variables"]], c)
-lag_yoy <- reduce(ma_yoy[["lags"]], c)
-
-ma_level <- models_and_accu %>% 
-  filter(level_ranking <= 30) %>% 
-  dplyr::select(variables, lags)
-v_level_yoy <- reduce(ma_level[["variables"]], c)
-lag_level_yoy <- reduce(ma_level[["lags"]], c)
-
-
-plots_variables_and_lags <- function(models_and_accu, type = "all") {
-  
-  models_and_accu <- models_and_accu %>% 
-    mutate(accu_lev = map(accu_lev, unlist),
-           accu_yoy = map(accu_yoy, unlist))
-  
-  sel_variables <- models_and_accu$variables
-  sel_variables <- reduce(sel_variables, c)
-  sel_lags <- models_and_accu$lags
-  sel_lags <- reduce(sel_lags, c)
-  
-  from_diff_yoy <- models_and_accu %>% 
-    filter(diff_ranking <= 30) %>% 
-    dplyr::select(variables, lags) 
-  
-  from_yoy <- models_and_accu %>% 
-    filter(yoy_ranking <= 30) %>% 
-    dplyr::select(variables, lags)
-  
-  from_level <- models_and_accu %>% 
-    filter(level_ranking <= 30) %>% 
-    dplyr::select(variables, lags)
-  
-  
-  
-  v_dyl <- full_join(v1, v2, by = "v") %>% 
-    full_join(v3, by = "v") %>% 
-    filter(v != "rgdp") %>% 
-    gather(key = "group", value = "n", -v) %>% 
-    mutate(n = ifelse(is.na(n), 0, n),
-           n_diff_o = ifelse(group == "n_diff", yes = n, 
-                             no = ifelse(group == "n_yoy", 0, -1))
-    ) %>% 
-    arrange(desc(n_diff_o)) %>% 
-    mutate(v = factor(v, levels = unique(v)),
-           group = factor(group, levels = c("n_level", "n_yoy", "n_diff" ))
-    )
-  
-  sb <- ggplot(vbl_dyl, aes(x = v, y = n, fill = group)) +  
-    geom_bar(stat = "identity") + 
-    coord_flip()
-  
-  
-  
-}
-
 
 models_and_accu <- models_and_accu %>%  
   mutate(n_variables = map(variables, length))
@@ -217,7 +144,7 @@ print(g_lag_stacked)
 
 
 
-my_variables_table <- reduce(list(count_vbls_diff, count_vbls_yoy, count_vbls_level), 
+variables_table <- reduce(list(count_vbls_diff, count_vbls_yoy, count_vbls_level), 
                              full_join, by = "v") %>% 
   rename(variable = v,
          fcs_diff_yoy = n_diff,
@@ -227,8 +154,30 @@ my_variables_table <- reduce(list(count_vbls_diff, count_vbls_yoy, count_vbls_le
          fcs_yoy = ifelse(is.na(fcs_yoy),  0, fcs_yoy),
          fcs_level = ifelse(is.na(fcs_level),  0, fcs_level)
          )
+variables_table
 
-my_variables_table
+
+lags_table <- reduce(list(count_lags_diff, count_lags_yoy, count_lags_level), 
+                 full_join, by = "lag") %>% 
+  rename(fcs_diff_yoy = lag_diff,
+         fcs_yoy = lag_yoy,
+         fcs_level = lag_level) %>% 
+  mutate(fcs_diff_yoy = ifelse(is.na(fcs_diff_yoy),  0, fcs_diff_yoy),
+         fcs_yoy = ifelse(is.na(fcs_yoy),  0, fcs_yoy),
+         fcs_level = ifelse(is.na(fcs_level),  0, fcs_level)
+  )
+lags_table
+
+sizes_table <- reduce(list(count_n_endo_diff, count_n_endo_yoy, count_n_endo_level), 
+                 full_join, by = "size") %>% 
+  rename(fcs_diff_yoy = size_diff,
+         fcs_yoy = size_yoy,
+         fcs_level = size_level) %>% 
+  mutate(fcs_diff_yoy = ifelse(is.na(fcs_diff_yoy),  0, fcs_diff_yoy),
+         fcs_yoy = ifelse(is.na(fcs_yoy),  0, fcs_yoy),
+         fcs_level = ifelse(is.na(fcs_level),  0, fcs_level)
+  )
+sizes_table
 
 
 g_diff_vs_yoy_best_diffs <- ggplot(data =  models_and_accu %>% filter(diff_ranking <= 30),
