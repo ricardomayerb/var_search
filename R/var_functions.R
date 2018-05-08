@@ -242,7 +242,7 @@ try_sizes_vbls_lags <- function(var_data, yoy_data, level_data, target_v, vec_si
     rename(variables = cv_vbl_names, lags = cv_lag)
   
   accu_rankings_models <- results_all_models %>% 
-    select(cv_vbl_names, cv_lag, accu_diff_yoy, accu_yoy, accu_lev,
+    dplyr::select(cv_vbl_names, cv_lag, accu_diff_yoy, accu_yoy, accu_lev,
            diff_ranking, yoy_ranking, level_ranking) %>% 
     rename(variables = cv_vbl_names, lags = cv_lag)
   
