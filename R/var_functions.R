@@ -57,6 +57,13 @@ var_cv <- function(var_data, this_p, this_type = "const", n_cv = 8, h_max = 6,
 
     test_rgdp <- test_y[ , "rgdp"]
     
+    # print("training_rgdp")
+    # print(training_rgdp)
+    # 
+    # 
+    # print("test_rgdp")
+    # print(test_rgdp)
+    
 
     this_var <- VAR(y = training_y, p = this_p, type = this_type) 
 
@@ -204,7 +211,6 @@ try_sizes_vbls_lags <- function(var_data, yoy_data, level_data, target_v, vec_si
   # transpose tibble, ensure result is still a tibble
   results_all_models <- as_tibble(t(as_tibble(results_all_models)))
   names(results_all_models) <- column_names 
-  
   results_all_models <- results_all_models %>% 
     mutate(cv_vbl_names = map(cv_vbl_names, 1),
            cv_lag = map(cv_lag, 1),
@@ -212,34 +218,42 @@ try_sizes_vbls_lags <- function(var_data, yoy_data, level_data, target_v, vec_si
     ) %>% 
     arrange(mean_cv_rmse) %>% 
     mutate(ranking = 1:n()) %>% 
-    mutate(accu_yoy = map(cv_fcs, from_diff_to_yoy_accu,
-                          yoy_ts = yoy_data, diff_ts = var_data, 
-                          level_ts = level_data, 
-                          training_length = train_span, n_cv = number_of_cv,
-                          h_max = fc_horizon),
-           accu_lev = map(cv_fcs, from_diff_to_lev_accu,
-                          yoy_ts = yoy_data, diff_ts = var_data, 
-                          level_ts = level_data, 
-                          training_length = train_span, n_cv = number_of_cv,
-                          h_max = fc_horizon)
-           ) %>% 
-    arrange(mean_cv_rmse) %>% 
-    mutate(diff_ranking = 1:n()) %>% 
-    arrange(unlist(accu_yoy)) %>% 
-    mutate(yoy_ranking = 1:n()) %>% 
-    arrange(unlist(accu_lev)) %>% 
-    mutate(level_ranking = 1:n()) %>% 
-    rename(accu_diff_yoy = mean_cv_rmse) %>% 
+    mutate(accu_test_fcs_yoy = map(cv_fcs, from_diff_to_yoy_accu,
+                                   yoy_ts = yoy_data, diff_ts = var_data, 
+                                   level_ts = level_data, 
+                                   training_length = train_span, n_cv = number_of_cv,
+                                   h_max = fc_horizon, return_all_ts = TRUE),
+           accu_yoy  = map(accu_test_fcs_yoy, "accu_yoy"),
+           cv_test_data_yoy = map(accu_test_fcs_yoy, "cv_test_sets_yoy"),
+           cv_fcs_yoy = map(accu_test_fcs_yoy, "cv_fc_yoy"),
+           accu_test_fcs_lev = map(cv_fcs, from_diff_to_lev_accu,
+                                   yoy_ts = yoy_data, diff_ts = var_data,
+                                   level_ts = level_data,
+                                   training_length = train_span, n_cv = number_of_cv,
+                                   h_max = fc_horizon, return_all_ts = TRUE),
+           accu_lev  = map(accu_test_fcs_lev, "accu_lev"),
+           cv_test_data_lev = map(accu_test_fcs_lev, "cv_test_sets_lev"),
+           cv_fcs_lev = map(accu_test_fcs_lev, "cv_fc_lev")
+    ) %>%
+    arrange(mean_cv_rmse) %>%
+    mutate(diff_ranking = 1:n()) %>%
+    arrange(unlist(accu_yoy)) %>%
+    mutate(yoy_ranking = 1:n()) %>%
+    arrange(unlist(accu_lev)) %>%
+    mutate(level_ranking = 1:n()) %>%
+    rename(accu_diff_yoy = mean_cv_rmse) %>%
     filter((diff_ranking <= 50) | (yoy_ranking <= 50) |
              (level_ranking <= 50))
   
+ 
   print(paste("Tried", len_lag, "different choices of lags per each combination"))
   print(paste("Number of models analyzed:", model_number))
   print(paste("CV repetitions:", number_of_cv))
   print(paste("Total estimations and fcs:", number_of_cv*model_number))
   
   cv_objects <- results_all_models %>% dplyr::select(cv_vbl_names, cv_lag, cv_errors, cv_test_data,
-                                   cv_fcs) %>% 
+                                   cv_fcs, accu_yoy, cv_test_data_yoy, cv_fcs_yoy,
+                                   accu_lev, cv_test_data_lev, cv_fcs_lev) %>% 
     rename(variables = cv_vbl_names, lags = cv_lag)
   
   accu_rankings_models <- results_all_models %>% 

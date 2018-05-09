@@ -12,14 +12,14 @@ general_variables_to_drop <- list(c("year", "quarter", "hlookup", "rgdp_sa", "tr
                                     "vta_auto", "exist"))
 # to make the data work we have to delete "m2" for argentina, "imp_int", "imp_k" for Ecuador and 
 # "imp_consumer", "imp_intermediate", "imp_capital" for Mexico
-extra_vars_to_drop <- list(Argentina = c("m2", "ri", ""), Bolivia = c("igae", "", ""), Brasil = c("", "", ""), 
+extra_vars_to_drop <- list(Argentina = c("m2", "ri", "p_import"), Bolivia = c("igae", "", ""), Brasil = c("", "", ""), 
                            Chile = c("", "", ""), Colombia = c("", "", ""), Ecuador = c("imp_int", "imp_k", ""), 
                            Mexico = c("imp_consumer", "imp_intermediate", "imp_capital"), Paraguay = c("", "", ""), 
                            Peru = c("", "", ""), Uruguay = c("cred", "", ""))
 
 variables_to_drop <- map2(extra_vars_to_drop, general_variables_to_drop, c)
 
-data_qm_xts_log <- get_gdp_shaped_data(data_path = data_path, 
+data_qm_xts_log <- get_gdp_shaped_data(data_path = cv_data_path, 
                                        list_variables_to_drop = variables_to_drop,
                                        only_complete_cases = TRUE,
                                        apply_log = TRUE)
@@ -53,10 +53,10 @@ colnames(diff_yoy_data_ts)
 variable_names <- colnames(yoy_data_ts)
 ncolumns <- ncol(yoy_data_ts)
 
-this_bt <- 1.9
+this_bt <- 2.5
 
-vec_max_lags <- c(1, 2, 3, 4)
-vec_n_varsize <- c(2, 3, 4, 5)
+vec_max_lags <- c(2)
+vec_n_varsize <- c(2)
 n_best <- 5
 number_of_cv <- 8
 fc_horizon <- 6
@@ -93,12 +93,55 @@ tictoc::toc()
 
 models_and_accu <- var_res[["accu_rankings_models"]]
 
-saveRDS(models_and_accu, "./data/arg_ma_long_bt18.rds")
+saveRDS(models_and_accu, "./data/arg_ma_long_verify.rds")
 
 if (ret_cv) {
   cv_objects <- var_res[["cv_objects"]]
-  saveRDS(cv_objects, "./data/arg_cvobj_long_bt18.rds")
+  saveRDS(cv_objects, "./data/arg_cvobj_long_verify.rds")
 }
+
+test_data_diff_yoy <- cv_objects$cv_test_data[[1]]
+fcs_diff_yoy <- cv_objects$cv_fcs[[1]]
+ferrors_diff_yoy <- cv_objects$cv_errors[[1]]
+union_test_fcs_fe_diff_yoy <- pmap(list(test_data, fcs, ferrors), ts.union)
+# walk(union_test_fcs_fe, print)
+
+test_diff_yoy <- cv_objects$cv_test_data[[1]]
+test_yoy <- cv_objects$cv_test_data_yoy[[1]]
+test_lev <- cv_objects$cv_test_data_lev[[1]]
+union_test_data <- pmap(list(test_diff_yoy, test_yoy, test_lev), ts.union)
+
+fcs_diff_yoy <- cv_objects$cv_fcs[[1]]
+fcs_yoy <- cv_objects$cv_fcs_yoy[[1]]
+fcs_lev <- cv_objects$cv_fcs_lev[[1]]
+union_fcs <- pmap(list(fcs_diff_yoy, fcs_yoy, fcs_lev), ts.union)
+
+one_fcs <- union_fcs[[1]]
+one_fcs_diff_yoy <- one_fcs[,1]
+one_fcs_yoy <- one_fcs[,2]
+one_fcs_lev <- one_fcs[,3]
+
+yoy_data_ts_rgdp <- yoy_data_ts[,"rgdp"]
+level_data_ts_rgdp <- level_data_ts[,"rgdp"]
+
+up_to_2016_q1_yoy <- window(yoy_data_ts_rgdp, end = c(2016, 1))
+up_to_2016_q1_level <- window(level_data_ts_rgdp, end = c(2016, 1))
+
+glued_fc_yoy <- ts(data = c(up_to_2016_q1_yoy, one_fcs_yoy), 
+                   start = stats::start(up_to_2016_q1_yoy), frequency = 4)
+glued_fc_lev <- ts(data = c(up_to_2016_q1_level, one_fcs_lev), 
+                   start = stats::start(up_to_2016_q1_level), frequency = 4)
+
+diff4_glued_fc_lev <- diff(glued_fc_lev, lag = 4)
+
+# these two are equal, thus conversion from yoy to level works
+diff4_glued_fc_lev
+glued_fc_yoy
+
+
+
+
+
 
 rm(var_res)
 
