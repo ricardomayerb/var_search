@@ -19,7 +19,7 @@ extra_vars_to_drop <- list(Argentina = c("m2", "ri", "p_import"), Bolivia = c("i
 
 variables_to_drop <- map2(extra_vars_to_drop, general_variables_to_drop, c)
 
-data_qm_xts_log <- get_gdp_shaped_data(data_path = cv_data_path, 
+data_qm_xts_log <- get_gdp_shaped_data(data_path = data_path, 
                                        list_variables_to_drop = variables_to_drop,
                                        only_complete_cases = TRUE,
                                        apply_log = TRUE)
