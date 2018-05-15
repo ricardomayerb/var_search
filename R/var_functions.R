@@ -226,6 +226,7 @@ try_sizes_vbls_lags <- function(var_data, yoy_data, level_data, target_v, vec_si
            accu_yoy  = map(accu_test_fcs_yoy, "accu_yoy"),
            cv_test_data_yoy = map(accu_test_fcs_yoy, "cv_test_sets_yoy"),
            cv_fcs_yoy = map(accu_test_fcs_yoy, "cv_fc_yoy"),
+           cv_errors_yoy = map2(cv_test_data_yoy, cv_fcs_yoy, .x - .y),
            accu_test_fcs_lev = map(cv_fcs, from_diff_to_lev_accu,
                                    yoy_ts = yoy_data, diff_ts = var_data,
                                    level_ts = level_data,
@@ -253,6 +254,7 @@ try_sizes_vbls_lags <- function(var_data, yoy_data, level_data, target_v, vec_si
   
   cv_objects <- results_all_models %>% dplyr::select(cv_vbl_names, cv_lag, cv_errors, cv_test_data,
                                    cv_fcs, accu_yoy, cv_test_data_yoy, cv_fcs_yoy,
+                                   cv_errors_yoy, 
                                    accu_lev, cv_test_data_lev, cv_fcs_lev) %>% 
     rename(variables = cv_vbl_names, lags = cv_lag)
   
