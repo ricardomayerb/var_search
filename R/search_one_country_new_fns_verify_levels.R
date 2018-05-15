@@ -12,7 +12,7 @@ general_variables_to_drop <- list(c("year", "quarter", "hlookup", "rgdp_sa", "tr
                                     "vta_auto", "exist"))
 # to make the data work we have to delete "m2" for argentina, "imp_int", "imp_k" for Ecuador and 
 # "imp_consumer", "imp_intermediate", "imp_capital" for Mexico
-extra_vars_to_drop <- list(Argentina = c("m2", "ri", "p_import"), Bolivia = c("igae", "", ""), Brasil = c("", "", ""), 
+extra_vars_to_drop <- list(Argentina = c("m2", "ri", ""), Bolivia = c("igae", "", ""), Brasil = c("", "", ""), 
                            Chile = c("", "", ""), Colombia = c("", "", ""), Ecuador = c("imp_int", "imp_k", ""), 
                            Mexico = c("imp_consumer", "imp_intermediate", "imp_capital"), Paraguay = c("", "", ""), 
                            Peru = c("", "", ""), Uruguay = c("cred", "", ""))
@@ -53,11 +53,7 @@ colnames(diff_yoy_data_ts)
 variable_names <- colnames(yoy_data_ts)
 ncolumns <- ncol(yoy_data_ts)
 
-<<<<<<< HEAD
-this_bt <- 1.5
-=======
 this_bt <- 1.9
->>>>>>> bdc03cf5c96ce0eee1e798b0bb49c41e879854cf
 
 vec_max_lags <- c(1, 2, 3, 4)
 vec_n_varsize <- c(2, 3, 4, 5)
@@ -97,19 +93,11 @@ tictoc::toc()
 
 models_and_accu <- var_res[["accu_rankings_models"]]
 
-<<<<<<< HEAD
-saveRDS(models_and_accu, "./data/arg_ma_long_bt15.rds")
+saveRDS(models_and_accu, "./data/arg_ma_long_bt18.rds")
 
 if (ret_cv) {
   cv_objects <- var_res[["cv_objects"]]
-  saveRDS(cv_objects, "./data/arg_cvobj_long_bt15.rds")
-=======
-saveRDS(models_and_accu, "./data/arg_ma_long_bt19.rds")
-
-if (ret_cv) {
-  cv_objects <- var_res[["cv_objects"]]
-  saveRDS(cv_objects, "./data/arg_cvobj_long_bt19.rds")
->>>>>>> bdc03cf5c96ce0eee1e798b0bb49c41e879854cf
+  saveRDS(cv_objects, "./data/arg_cvobj_long_bt18.rds")
 }
 
 rm(var_res)
