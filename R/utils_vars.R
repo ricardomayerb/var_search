@@ -242,7 +242,8 @@ fcs_accu <- function(fc_mat, test_data_mat) {
 }
 
 from_diff_to_yoy_accu <- function(yoy_ts, diff_ts, level_ts, training_length,
-                                  n_cv, h_max, cv_fcs_one_model) {
+                                  n_cv, h_max, cv_fcs_one_model, 
+                                  return_all_ts = FALSE ) {
   
   undiff_stuff <- cv_obs_fc_back_from_diff(yoy_ts = yoy_ts, diff_ts = diff_ts,
                                            level_ts = level_ts,
@@ -258,12 +259,18 @@ from_diff_to_yoy_accu <- function(yoy_ts, diff_ts, level_ts, training_length,
   
   accu_yoy <- fcs_accu(fc_mat = cv_fcs_yoy_mat, test_data_mat = cv_test_sets_yoy_mat) 
   
-  return(accu_yoy)
-  
+  if (return_all_ts) {
+    return(list(accu_yoy = accu_yoy, cv_test_sets_yoy = cv_test_sets_yoy,
+                cv_fc_yoy = cv_fc_yoy))
+  } else{
+    return(accu_yoy)
+  }
 }
 
+
 from_diff_to_lev_accu <- function(yoy_ts, diff_ts, level_ts, training_length,
-                                  n_cv, h_max, cv_fcs_one_model) {
+                                  n_cv, h_max, cv_fcs_one_model, 
+                                  return_all_ts = FALSE ) {
   
   undiff_stuff <- cv_obs_fc_back_from_diff(yoy_ts = yoy_ts, diff_ts = diff_ts,
                                            level_ts = level_ts,
@@ -279,7 +286,12 @@ from_diff_to_lev_accu <- function(yoy_ts, diff_ts, level_ts, training_length,
   
   accu_lev <- fcs_accu(fc_mat = cv_fcs_lev_mat, test_data_mat = cv_test_sets_lev_mat) 
   
-  return(accu_lev)
+  if (return_all_ts) {
+    return(list(accu_lev = accu_lev, cv_test_sets_lev = cv_test_sets_lev,
+                cv_fc_lev = cv_fc_lev))
+  } else{
+    return(accu_yoy)
+  }
   
 }
 
