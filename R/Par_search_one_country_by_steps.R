@@ -207,7 +207,7 @@ models_and_accu_5 <- var_res_5[["accu_rankings_models"]]
 models_and_accu_12345 <- rbind(models_and_accu_1, models_and_accu_2, models_and_accu_3, models_and_accu_4, models_and_accu_5) %>% 
   mutate(accu_lev = unlist(accu_lev),
          accu_yoy = unlist(accu_yoy)) %>% 
-  select(-c(diff_ranking, yoy_ranking, level_ranking)) %>% 
+  dplyr::select(-c(diff_ranking, yoy_ranking, level_ranking)) %>% 
   arrange(accu_yoy) %>% 
   mutate(yoy_ranking = 1:n())
 
@@ -223,7 +223,7 @@ cv_objects_4 <- var_res_4[["cv_objects"]]
 cv_objects_5 <- var_res_5[["cv_objects"]]
 
 cv_objects_12345 <- rbind(cv_objects_1, cv_objects_2, cv_objects_3, cv_objects_4, cv_objects_5) %>% 
-  select(-c(cv_test_data, cv_fcs)) 
+  dplyr::select(-c(cv_test_data, cv_fcs)) 
 
 saveRDS(cv_objects_12345, "./data/Par_by_step_12345_cv_objects.rds")
 
