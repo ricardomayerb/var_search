@@ -1,7 +1,7 @@
 library(tidyverse)
 
-models_and_accu <- readRDS("./data/Arg_by_step_12345.rds")
-from_sarima <- readRDS(file = "./data/sarimax_objects_Argentina.rds")
+models_and_accu <- readRDS("./data/Bol_by_step_12345.rds")
+from_sarima <- readRDS(file = "./data/sarimax_objects_Bolivia.rds")
 rmse_yoy_sarimax <- from_sarima$compare_rmse_yoy
 rmse_level_sarimax <- from_sarima$compare_rmse
 
@@ -33,7 +33,8 @@ rmse_level_sarimax$ave_rmse_h1h8_stata <- rowMeans(cbind(rmse_level_sarimax$rmse
                                                    rmse_level_sarimax$rmse8)) 
 
 level_accu_r_vs_stata <- rmse_level_sarimax %>% 
-  select(variable, lag,  ave_rmse_h1h8, ave_rmse_h1h8_stata)
+  select(variable,  lag, ave_rmse_h1h8, ave_rmse_h1h8_stata)
+
 
 just_model_and_ave_rmse_1 <- models_and_accu %>% 
   select(variables, lags, accu_yoy) %>% 
