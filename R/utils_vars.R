@@ -7,6 +7,45 @@ library(tidyverse)
 library(gridExtra)
 library(grid)
 
+get_rmse_var_table_at_each_h_diff_yoy <- function(data = cv_objects){
+  cv_errors <- cv_objects[["cv_errors_yoy"]]
+  
+  all_rmses <- map(cv_errors, function(x) sqrt(colMeans( (reduce(x, rbind))^2))  )
+  all_rmses_tbl <- reduce(all_rmses, rbind)
+  rmse_names <- paste0("rmse_", 1:6)
+  colnames(all_rmses_tbl) <- rmse_names
+  row.names(all_rmses_tbl) <- NULL
+  rmse_each_h <- cbind(cv_objects, all_rmses_tbl)
+  
+  rmse_each_h <- rmse_each_h %>% 
+    select(-c(cv_errors, accu_yoy, cv_test_data_yoy, cv_fcs_yoy, accu_lev,
+              cv_test_data_lev, cv_fcs_lev, cv_errors_yoy))
+  
+  return(rmse_each_h)
+  
+}
+
+add_column_cv_yoy_errors <- function(data = cv_objects){
+  
+  cv_errors_yoy <- list_along(1:nrow(data))
+  
+  for (i in 1:nrow(data)) {
+    data_one_row <- data[i,]
+    test_data_yoy <- data_one_row[["cv_test_data_yoy"]][[1]]
+    fcs_yoy <- data_one_row[["cv_fcs_yoy"]][[1]]
+    errors_yoy <- map2(test_data_yoy, fcs_yoy, ~ .x - .y)
+    
+    cv_errors_yoy[[i]] <- errors_yoy
+    
+  }
+  
+  data$cv_errors_yoy <- cv_errors_yoy 
+  
+  return(data)
+  
+}
+
+
 un_yoy <- function(init_lev, vec_yoy) {
   
   n_init <- length(init_lev)
