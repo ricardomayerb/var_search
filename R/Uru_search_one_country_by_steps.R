@@ -42,7 +42,7 @@ data_qm_mts_log_yoy_diff <- map(data_qm_xts_log_yoy_diff, to_ts_q)
 # Singular CCM problems: arg, ecu, mex
 
 # this_country_name <- "Uruguay"  
-this_country_name <- "Bolivia"  
+this_country_name <- "Uruguay"  
 this_country <- this_country_name
 level_data_ts <- data_qm_mts_log[[this_country]]
 yoy_data_ts <- data_qm_mts_log_yoy[[this_country]]
@@ -75,15 +75,17 @@ if (train_span+fc_horizon+number_of_cv > nrow(diff_yoy_data_ts)) {
   stop()
   
 }
+# one_time bt test, to get an intitial idea of the most important variables
 
 target_rgdp <- c("rgdp")
+
+# this_bt = 1.3 test. 9.116667 minutes
+
 # vec_a_priori_variables <- c("rpc")
 vec_a_priori_variables <- c("")
 
 ret_cv = TRUE
-
-# one_time bt test, to get an intitial idea of the most important variables
-
+# 
 # tictoc::tic()
 # var_res <- try_sizes_vbls_lags(vec_size = vec_n_varsize,
 #                                vec_lags = vec_max_lags,
@@ -98,29 +100,27 @@ ret_cv = TRUE
 #                                return_cv = ret_cv)
 # 
 # tictoc::toc()
+# 
 # models_and_accu <- var_res[["accu_rankings_models"]]
-
-# the top 5 variable models include all manuf and primario only the 15th ranked model is ("rgdp", "manuf", "exp_hydrocarbon", "gto_k")
-# doesnt have primario so we will miss that one
 
 # all VARs size 2, 0.32 minutes
 tictoc::tic()
 var_res_1 <- try_sizes_vbls_lags(vec_size = 2, 
-                               vec_lags = c(1,2,3,4,5),
-                               var_data = diff_yoy_data_ts, yoy_data = yoy_data_ts,
-                               level_data = level_data_ts, 
-                               target_v = target_rgdp,
-                               pre_selected_v = c(""), 
-                               is_cv = TRUE,
-                               training_length = train_span,
-                               h_max = fc_horizon, n_cv = number_of_cv,
-                               bt_factor = 0, maxlag_ccm = 8,
-                               return_cv = ret_cv)
+                                 vec_lags = c(1,2,3,4,5),
+                                 var_data = diff_yoy_data_ts, yoy_data = yoy_data_ts,
+                                 level_data = level_data_ts, 
+                                 target_v = target_rgdp,
+                                 pre_selected_v = c(""), 
+                                 is_cv = TRUE,
+                                 training_length = train_span,
+                                 h_max = fc_horizon, n_cv = number_of_cv,
+                                 bt_factor = 0, maxlag_ccm = 8,
+                                 return_cv = ret_cv)
 
 tictoc::toc()
 
 
-# all VARs size 3,  4.495667 mintutes
+# all VARs size 3, 4.135333 mintutes
 tictoc::tic()
 var_res_2 <- try_sizes_vbls_lags(vec_size = 3, 
                                  vec_lags = c(2,3,4,5),
@@ -137,11 +137,11 @@ var_res_2 <- try_sizes_vbls_lags(vec_size = 3,
 tictoc::toc()
 
 
-# all VARs size 4, 2 choices of lag, 22.76467 (i also checked in the pre bt exercise that 2, 3 lags are dominant with size 4)
+# all VARs size 4, 2 choices of lag (3 and 4 seem the best choices for this size for Uruguay), 21.61133 min
 
 tictoc::tic()
 var_res_3 <- try_sizes_vbls_lags(vec_size = 4, 
-                                 vec_lags = c(2,3),
+                                 vec_lags = c(3,4),
                                  var_data = diff_yoy_data_ts, yoy_data = yoy_data_ts,
                                  level_data = level_data_ts, 
                                  target_v = target_rgdp,
@@ -154,15 +154,15 @@ var_res_3 <- try_sizes_vbls_lags(vec_size = 4,
 
 tictoc::toc()
 
-# or 1 pre_chosen, size 4, 3 choices of lag, 3.701333 (this exercise doesnt seem necessary for bolivia)
+# or 1 pre_chosen (for uruguay the best option seems Serv), size 4, 3 choices of lag, 3.378 minutes
 
 tictoc::tic()
 var_res_4 <- try_sizes_vbls_lags(vec_size = 4, 
-                                 vec_lags = c(2, 3, 4),
+                                 vec_lags = c(1, 2, 5),
                                  var_data = diff_yoy_data_ts, yoy_data = yoy_data_ts,
                                  level_data = level_data_ts, 
                                  target_v = target_rgdp,
-                                 pre_selected_v = c("manuf"), 
+                                 pre_selected_v = c("serv"), 
                                  is_cv = TRUE,
                                  training_length = train_span,
                                  h_max = fc_horizon, n_cv = number_of_cv,
@@ -171,9 +171,9 @@ var_res_4 <- try_sizes_vbls_lags(vec_size = 4,
 
 tictoc::toc()
 
-# plus 1 pre_chosen, size 5, 1 lag, 12.92 min
-# Based one_time bt test, I choose manuf as the preset variable for length 5 vars and lag = 3
+# plus 1 pre_chosen (serv), size 5, 1(3 lags) lag 11.4775 min
 
+# i choose 1 pre_chosen based on the top models i have seen before
 
 tictoc::tic()
 var_res_5 <- try_sizes_vbls_lags(vec_size = 5, 
@@ -181,7 +181,7 @@ var_res_5 <- try_sizes_vbls_lags(vec_size = 5,
                                  var_data = diff_yoy_data_ts, yoy_data = yoy_data_ts,
                                  level_data = level_data_ts, 
                                  target_v = target_rgdp,
-                                 pre_selected_v = c("manuf"), 
+                                 pre_selected_v = c("serv"), 
                                  is_cv = TRUE,
                                  training_length = train_span,
                                  h_max = fc_horizon, n_cv = number_of_cv,
@@ -196,23 +196,33 @@ models_and_accu_3 <- var_res_3[["accu_rankings_models"]]
 models_and_accu_4 <- var_res_4[["accu_rankings_models"]]
 models_and_accu_5 <- var_res_5[["accu_rankings_models"]]
 
-models_and_accu_12345 <- rbind(models_and_accu_1, models_and_accu_2, models_and_accu_3, models_and_accu_4) %>% 
+models_and_accu_12345 <- rbind(models_and_accu_1, models_and_accu_2, models_and_accu_3, models_and_accu_4, models_and_accu_5) %>% 
   mutate(accu_lev = unlist(accu_lev),
          accu_yoy = unlist(accu_yoy)) %>% 
-  select(-c(diff_ranking, yoy_ranking, level_ranking)) %>% 
+  dplyr::select(-c(diff_ranking, yoy_ranking, level_ranking)) %>% 
   arrange(accu_yoy) %>% 
   mutate(yoy_ranking = 1:n())
-  
+
 
 # models_and_accu_1 <- var_res_1[["accu_rankings_models"]]
 
-saveRDS(models_and_accu_12345, "./data/Bol_by_step_12345.rds")
+saveRDS(models_and_accu_12345, "./data/Uru_by_step_12345.rds")
 
-# if (ret_cv) {
-#   cv_objects <- var_res[["cv_objects"]]
-#   saveRDS(cv_objects, "./data/arg_cvobj_long_bt15.rds")
-# }
-# 
+cv_objects_1 <- var_res_1[["cv_objects"]] 
+cv_objects_2 <- var_res_2[["cv_objects"]]
+cv_objects_3 <- var_res_3[["cv_objects"]]
+cv_objects_4 <- var_res_4[["cv_objects"]]
+cv_objects_5 <- var_res_5[["cv_objects"]]
+
+cv_objects_12345 <- rbind(cv_objects_1, cv_objects_2, cv_objects_3, cv_objects_4, cv_objects_5) %>% 
+  select(-c(cv_test_data, cv_fcs))
+
+
+saveRDS(cv_objects_12345, "./data/Uru_by_step_12345_cv_objects.rds")
+
+
+#
+
 # rm(var_res)
 # 
 # 
