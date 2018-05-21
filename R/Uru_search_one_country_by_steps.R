@@ -215,7 +215,7 @@ cv_objects_4 <- var_res_4[["cv_objects"]]
 cv_objects_5 <- var_res_5[["cv_objects"]]
 
 cv_objects_12345 <- rbind(cv_objects_1, cv_objects_2, cv_objects_3, cv_objects_4, cv_objects_5) %>% 
-  select(-c(cv_test_data, cv_fcs))
+  dplyr::select(-c(cv_test_data, cv_fcs))
 
 
 saveRDS(cv_objects_12345, "./data/Uru_by_step_12345_cv_objects.rds")

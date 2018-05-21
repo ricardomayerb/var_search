@@ -1,4 +1,5 @@
 library(tidyverse)
+source('./R/utils_vars.R')
 
 country_name <- "Uruguay"
 short_name <- substr(country_name, start = 1, stop = 3)
@@ -44,25 +45,10 @@ rmse_yoy_sarimax$ave_rmse_h1h6 <- rowMeans(cbind(rmse_yoy_sarimax$yoy_rmse_1,
                                                  rmse_yoy_sarimax$yoy_rmse_5, 
                                                  rmse_yoy_sarimax$yoy_rmse_6)) 
 
-rmse_level_sarimax$ave_rmse_h1h6 <- rowMeans(cbind(rmse_level_sarimax$level_rmse_1, 
-                                                   rmse_level_sarimax$level_rmse_2, 
-                                                   rmse_level_sarimax$level_rmse_3, 
-                                                   rmse_level_sarimax$level_rmse_4, 
-                                                   rmse_level_sarimax$level_rmse_5, 
-                                                   rmse_level_sarimax$level_rmse_6)) 
 
-rmse_level_sarimax$ave_rmse_h1h6_stata <- rowMeans(cbind(rmse_level_sarimax$rmse1, 
-                                                         rmse_level_sarimax$rmse2, 
-                                                         rmse_level_sarimax$rmse3, 
-                                                         rmse_level_sarimax$rmse4, 
-                                                         rmse_level_sarimax$rmse5, 
-                                                         rmse_level_sarimax$rmse6))
 
 
 ####### AVERAGE RMSE OVER H = 1, 2, 3, 4, 5 AND 6
-level_accu_r_vs_stata <- rmse_level_sarimax %>% 
-  dplyr::select(variable, lag,  ave_rmse_h1h6, ave_rmse_h1h6_stata)
-
 just_model_and_ave_rmse_1 <- models_and_accu %>% 
   dplyr::select(variables, lags, accu_yoy, arima_order, arima_seasonal) 
 
