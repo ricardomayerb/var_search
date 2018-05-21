@@ -1,7 +1,7 @@
 library(tidyverse)
 source('./R/utils_vars.R')
 
-country_name <- "Uruguay"
+country_name <- "Argentina"
 short_name <- substr(country_name, start = 1, stop = 3)
 
 models_accu_path <- paste0("./data/", short_name, "_by_step_12345.rds")
