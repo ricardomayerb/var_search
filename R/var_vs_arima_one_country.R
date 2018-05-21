@@ -1,7 +1,11 @@
 library(tidyverse)
+
 source('./R/utils_vars.R')
 
-country_name <- "Uruguay"
+country_name <- "Peru"
+
+
+
 short_name <- substr(country_name, start = 1, stop = 3)
 
 models_accu_path <- paste0("./data/", short_name, "_by_step_12345.rds")
@@ -13,7 +17,7 @@ cv_objects <- readRDS(cv_obj_path)
 from_sarima <- readRDS(from_sarima_path)
 
 models_and_accu <- models_and_accu %>% 
-  filter(yoy_ranking <= 100) %>% 
+  filter(yoy_ranking <= 50) %>% 
   mutate(lags = unlist(lags)) %>% 
   mutate(arima_order = NA, arima_seasonal = NA) %>% 
   mutate(model_type = "VAR")
@@ -22,7 +26,7 @@ cv_objects <- cv_objects %>%
   mutate(accu_yoy = unlist(accu_yoy)) %>% 
   arrange(accu_yoy) %>% 
   mutate(yoy_ranking = 1:n()) %>% 
-  filter(yoy_ranking <= 100)
+  filter(yoy_ranking <= 50)
 
 cv_objects <- add_column_cv_yoy_errors(cv_objects)
 
