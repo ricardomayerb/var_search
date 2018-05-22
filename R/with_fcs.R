@@ -70,7 +70,11 @@ cv_objects <- cv_objects %>%
   mutate(accu_yoy = unlist(accu_yoy)) %>% 
   arrange(accu_yoy) %>% 
   mutate(yoy_ranking = 1:n()) %>% 
-  filter(yoy_ranking <= 50)
+  filter(yoy_ranking <= 50) %>% 
+  mutate(proper_level_test_data = map(cv_test_data_lev, ~ map(., exp)),
+         proper_level_fcs = map(cv_fcs_lev, ~ map(., exp))
+         )
+         
 
 cv_objects <- add_column_cv_yoy_errors(cv_objects)
 
