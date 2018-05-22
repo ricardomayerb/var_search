@@ -35,6 +35,8 @@ with_rmses <- get_rmse_var_table_at_each_h_diff_yoy(data = cv_objects) %>%
 rmse_yoy_sarimax <- from_sarima$compare_rmse_yoy %>% 
   mutate(model_type = "arima")
 
+extended_x_data_ts <- from_sarima$extended_x_data_ts
+
 
 v_lags_order_season <- from_sarima$var_lag_order_season 
 rmse_yoy_sarimax <- rmse_yoy_sarimax %>% 

@@ -1,27 +1,3 @@
-# take models_rmse_every_h and 
-# 
-# 0. load data files into the script (level and diff?yoy for westimation and possible yoy for plots)
-# 
-# 1.  add a column with mutate and map2 or map, call it estimated_VAR, and use the command previously seen in an email to 
-# estimate a VAR. Use ifelse to assing a NA is the model is not a VAR
-# 
-# 2.  add a column with mutate and pmap, call it estimated_arima. Use ifelse to assing a NA is the model is not an arima
-# 
-# 
-# The next piece of code we should write is something that take models out of a table (both var or sarimax) 
-# and do estimation-fc-and-cv, optionally taking as given a set of rmse. Think of the final table with both var 
-# and sarima accu_yoy or the m_analysis excel sheet
-
-
-# VARs_from_best_inputs <- rank_tibble %>%
-#   mutate(
-#     vfit = map2(
-#       variables, lags,
-#       function(x, y) vars::VAR(y = VAR_data[, x], p = y)
-#     )
-#     
-# 
-
 source('./R/var_functions.R')
 source('./R/utils_vars.R')
 source('./R/utils.R')
@@ -105,6 +81,14 @@ rmse_yoy_sarimax <- from_sarima$compare_rmse_yoy %>%
   mutate(model_type = "arima")
 
 
+extended_x_data_ts <- from_sarima$extended_x_data_ts
+extended_x_data_ts <- window(extended_x_data_ts, 
+                             start = stats::start(level_data_ts))
+future_x_data_ts <- subset(extended_x_data_ts, start = (1 + nrow(level_data_ts)))
+
+
+
+
 v_lags_order_season <- from_sarima$var_lag_order_season 
 rmse_yoy_sarimax <- rmse_yoy_sarimax %>% 
   left_join(v_lags_order_season, by = c("variable", "lag"))
@@ -143,11 +127,14 @@ each_h_just_model_and_ave_rmse_var <- with_rmses %>%
   mutate(arima_order = NA, arima_seasonal = NA) %>% 
   select(-yoy_ranking)
 
+
+h_max = 6
+
 each_h_just_model_and_ave_rmse_var <- as_tibble(each_h_just_model_and_ave_rmse_var) %>% 
-  mutate(estimated_VAR = map2(variables, lags,  ~ vars::VAR(y = diff_yoy_data_ts[, .x], p = .y)),
-         fc_obj = map(estimated_VAR, forecast, h = 6),
+  mutate(estimated_obj = map2(variables, lags,  ~ vars::VAR(y = diff_yoy_data_ts[, .x], p = .y)),
+         fc_obj = map(estimated_obj, forecast, h = h_max),
          rgdp_mean_fc = map(fc_obj, c("forecast", "rgdp", "mean")),
-         var_roots = map(estimated_VAR, vars::roots),
+         var_roots = map(estimated_obj, vars::roots),
          all_stable = map(var_roots, ~ all(.x < 1))
   )
 
@@ -162,82 +149,67 @@ each_h_just_model_and_ave_rmse_sarimax_0 <- as_tibble(each_h_just_model_and_ave_
   filter(variables != "rgdp") %>% 
   filter(variables != "expec_demand") %>%
   filter(lags == 0) %>%   
-  mutate(estimated_arimax = pmap(list(variables, lags, arima_order, arima_seasonal), 
+  mutate(estimated_obj = pmap(list(variables, lags, arima_order, arima_seasonal), 
                                  ~ my_arimax(y_ts = level_data_ts[, "rgdp"], 
                                              y_order = ..3, 
                                              y_seasonal = ..4, 
                                              xreg_ts = level_data_ts[, ..1],
-                                             vec_of_names = ..1) ))
+                                             vec_of_names = ..1) ),
+         estimated_obj = map(estimated_obj, 1) ,
+         fc_obj = map2(estimated_obj, variables, 
+                   ~ forecast(.x, 
+                              h = h_max, 
+                              xreg = future_x_data_ts[1:h_max, .y])
+                   )
+         )
          
+arimax_fc <- function(arima_obj, xvariables, lags, extended_x, h) {
+  maxlag <- max(lags)
+  this_xreg <- extended_x[, xvariables]
+  xreg_wlags <- reduce(map(seq(0, maxlag), 
+                           ~ lag.xts(this_xreg, k = .)) , ts.union)
+  
+  future_xreg_wlag <- subset(xreg_wlags, 
+                             start = (1 + nrow(level_data_ts)),
+                             end = (h + nrow(level_data_ts))
+                             ) 
+  
+  fc <- forecast(arima_obj, h = h, xreg = future_xreg_wlag)
+  
+  return(fc)
+}
+
 each_h_just_model_and_ave_rmse_sarimax_12 <- as_tibble(each_h_just_model_and_ave_rmse_sarimax) %>% 
   filter(variables != "rgdp") %>% 
   filter(variables != "expec_demand") %>%
   filter(lags != 0) %>%   
-  mutate(estimated_arimax = pmap(list(variables, lags, arima_order, arima_seasonal), 
+  mutate(estimated_obj = pmap(list(variables, lags, arima_order, arima_seasonal), 
                                  ~ my_arimax(y_ts = level_data_ts[, "rgdp"], 
                                              y_order = ..3, 
                                              y_seasonal = ..4, 
                                              xreg_ts = level_data_ts[, ..1],
                                              xreg_lags = 0:..2,
-                                             vec_of_names = ..1)[[1]] )
-  )  
+                                             vec_of_names = ..1)[[1]] ),
+         fc_obj = pmap( list(estimated_obj, variables, lags), 
+                   ~ arimax_fc(arima_obj = ..1,  xvariables = ..2,
+                   lags = ..3, extended_x = extended_x_data_ts, h = h_max)
+                   )
+  )
+                   
+                   
 
-each_h_model_and_ave_rmse_sarimax012 <- rbind(
+
+
+each_h_model_and_ave_rmse_sarimax_012 <- rbind(
   each_h_just_model_and_ave_rmse_sarimax_0,
-  each_h_just_model_and_ave_rmse_sarimax_12) 
-
-each_h_model_and_ave_rmse_sarimax <- each_h_model_and_ave_rmse_sarimax012 %>%  
-  mutate(fc_obj = map(estimated_arimax[[1]], forecast, h = 6))
-
-foo <- each_h_model_and_ave_rmse_sarimax012[1,]
-
-foo_ea <- foo[["estimated_arimax"]][[1]]
-
-foo_ea %>% forecast(h=6)
-
-fc_obj = map(estimated_VAR, forecast, h = 6),
-rgdp_mean_fc = map(fc_obj, c("forecast", "rgdp", "mean")),
-var_roots = map(estimated_VAR, vars::roots),
-all_stable = map(var_roots, ~ all(.x < 1))
-
-# each_h_just_model_and_ave_rmse_sarimax <- as_tibble(each_h_just_model_and_ave_rmse_sarimax) %>% 
-#   filter(variables != "rgdp") %>% 
-#   filter(variables != "expec_demand") %>%
-#   mutate(estimated_arimax = ifelse(lags == 0, 
-#                                    pmap(list(variables, lags, arima_order, arima_seasonal), 
-#                                  ~ my_arimax(y_ts = level_data_ts[, "rgdp"], 
-#                                              y_order = ..3, 
-#                                              y_seasonal = ..4, 
-#                                              xreg_ts = level_data_ts[, ..1],
-#                                              vec_of_names = ..1) ), 
-#                                  pmap(list(variables, lags, arima_order, arima_seasonal), 
-#                                       ~ my_arimax(y_ts = level_data_ts[, "rgdp"], 
-#                                                   y_order = ..3, 
-#                                                   y_seasonal = ..4, 
-#                                                   xreg_ts = level_data_ts[, ..1],
-#                                                   xreg_lags = 0:..2,
-#                                                   vec_of_names = ..1) )
-#   )  )
-
-# all_arimax_0 <- my_arimax(y_ts = level_data_ts[, "rgdp"], xreg_ts = level_data_ts[ , ..1],  y_order = ..3, 
-#                           y_seasonal = ..4, vec_of_names = ..1)
-# 
-# all_arimax_1 <- my_arimax(y_ts = rgdp_ts, xreg_ts = mdata_ext_ts,  y_order = rgdp_order, 
-#                           y_seasonal = rgdp_seasonal, vec_of_names = monthly_names,
-#                           xreg_lags = 0:1)
-# 
-# all_arimax_2 <- my_arimax(y_ts = rgdp_ts, xreg_ts = mdata_ext_ts,  y_order = rgdp_order, 
-#                           y_seasonal = rgdp_seasonal, vec_of_names = monthly_names,
-#                           xreg_lags = 0:2)
+  each_h_just_model_and_ave_rmse_sarimax_12) %>% 
+  mutate(rgdp_mean_fc = map(fc_obj, c("mean")))
 
 
 
-
-
-
-
-
-
+each_h_model_and_ave_rmse_r <- rbind(
+  each_h_just_model_and_ave_rmse_var %>%  select(-c(var_roots, all_stable)),
+  each_h_model_and_ave_rmse_sarimax_012)
 
 
 
@@ -273,8 +245,6 @@ h5_model_and_ave_rmse_r <- models_rmse_every_h %>%
 h6_model_and_ave_rmse_r <- models_rmse_every_h %>% 
   filter(rmse_horizon == "rmse_6") %>% 
   arrange(rmse_value)
-# 1.  add a column with mutate and map2 or map, call it estimated_VAR, and use the command previously seen in an email to 
-# estimate a VAR. Use ifelse to assing a NA is the model is not a VAR
 
 
 
