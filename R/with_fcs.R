@@ -47,6 +47,9 @@ level_data_ts <- data_qm_mts_log[[country_name]]
 yoy_data_ts <- data_qm_mts_log_yoy[[country_name]]
 diff_yoy_data_ts <- data_qm_mts_log_yoy_diff[[country_name]]
 
+loglev_rgdp_ts <- level_data_ts[ , "rgdp"]
+
+
 ################################### Load RDS objects ##################################
 short_name <- substr(country_name, start = 1, stop = 3)
 
@@ -66,15 +69,71 @@ models_and_accu <- models_and_accu %>%
   mutate(arima_order = NA, arima_seasonal = NA) %>% 
   mutate(model_type = "VAR")
 
+fc_cv_loglevel_2_ext_cv_level <- function(loglev_rgdp, 
+                                          one_cv_loglev_test,
+                                          one_cv_loglev_fc) {
+  
+  test_start_log <- stats::start(one_cv_loglev_test)
+  
+  quasi_pre_test_log <- window(loglev_rgdp, end = test_start_log)
+  pre_test_log <- subset(quasi_pre_test_log, 
+                         end = length(quasi_pre_test_log) - 1)
+  
+  extended_test_log <- ts(data = c(pre_test_log, one_cv_loglev_test),
+                          start = stats::start(pre_test_log), 
+                          frequency = 4)
+  
+  extended_fc_log <- ts(data = c(pre_test_log, one_cv_loglev_fc),
+                        start = stats::start(pre_test_log), 
+                        frequency = 4)
+  
+  extended_test_level <- exp(extended_test_log)
+  extended_fc_level <- exp(extended_fc_log)
+  
+  return(list(test_data = extended_test_level, fc = extended_fc_level))
+}
+
+
+
 cv_objects <- cv_objects %>% 
   mutate(accu_yoy = unlist(accu_yoy)) %>% 
   arrange(accu_yoy) %>% 
   mutate(yoy_ranking = 1:n()) %>% 
   filter(yoy_ranking <= 50) %>% 
   mutate(proper_level_test_data = map(cv_test_data_lev, ~ map(., exp)),
-         proper_level_fcs = map(cv_fcs_lev, ~ map(., exp))
-         )
-         
+         proper_level_fcs = map(cv_fcs_lev, ~ map(., exp)),
+         extended_test_lev = map2(cv_test_data_lev, cv_fcs_lev,
+                                  ~ map2(
+                                    .x,
+                                    .y,
+                                    ~ fc_cv_loglevel_2_ext_cv_level(
+                                      loglev_rgdp_ts,
+                                      .x, 
+                                      .y)[["test_data"]]
+                                    )
+                                  ),
+         extended_cv_fcs_lev = map2(cv_test_data_lev, cv_fcs_lev,
+                                  ~ map2(
+                                    .x,
+                                    .y,
+                                    ~ fc_cv_loglevel_2_ext_cv_level(
+                                      loglev_rgdp_ts,
+                                      .x, 
+                                      .y)[["fc"]]
+                                      )
+                                  ),
+         cv_errors_proper_levels = map2(extended_test_lev, extended_cv_fcs_lev,
+                                        ~ map2(.x, .y, ~ .x - .y)),
+         extended_test_yoy_growth = map(extended_test_lev, 
+                                 ~ map(., ~ diff(., lag = 4)/lag.xts(., k = 4)
+                                       )),
+         extended_cv_fcs_yoy_growth = map(extended_cv_fcs_lev, 
+                                 ~ map(., ~ diff(., lag = 4)/lag.xts(., k = 4)
+                                 )),
+         extended_cv_error_yoy = map2(extended_test_yoy_growth, 
+                                      extended_cv_fcs_yoy_growth,
+                                      ~ map2(.x, .y, ~ .x - .y))
+  )
 
 cv_objects <- add_column_cv_yoy_errors(cv_objects)
 
@@ -253,3 +312,38 @@ h6_model_and_ave_rmse_r <- models_rmse_every_h %>%
 
 
 
+
+# 
+# moo <- cv_objects$cv_test_data_lev[[1]]
+# 
+# moo
+# goo <- moo[[1]]
+# goo
+# 
+# goostart <- stats::start(goo)
+# goostart
+# 
+# doo <- window(level_data_ts[, "rgdp"], end = goostart)
+# doo
+# 
+# roo <- subset(doo, end = length(doo)-1)
+# roo
+# 
+# extended_test <- ts(data = c(roo, goo), start = stats::start(roo), frequency = 4)
+# extended_test
+# 
+# woo <- cv_objects$cv_fcs_lev[[1]][[1]]
+# woo
+# 
+# extended_fc <- ts(data = c(roo, woo), start = stats::start(roo), frequency = 4)
+# extended_fc
+# 
+# foo <- fc_cv_loglevel_2_ext_cv_level(level_data_ts[, "rgdp"], goo, woo)
+# foo_fc <- foo[["fc"]]         
+# foo_test <- foo[["test_data"]]
+# foo_fc
+# foo_test
+# 
+# yoy_extended_test <- diff(extended_test, lag = 4)
+# yoy_extended_fc <- diff(extended_fc, lag = 4)
+# 
