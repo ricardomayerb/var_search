@@ -2,8 +2,9 @@ source('./R/var_functions.R')
 source('./R/utils_vars.R')
 source('./R/utils.R')
 
-country_name <- "Peru"
+country_name <- "Brasil"
 
+h_max = 6
 #################################### Load Data #######################################
 
 data_path <- "./data/pre_r_data/"
@@ -132,10 +133,13 @@ cv_objects <- cv_objects %>%
                                  )),
          extended_cv_error_yoy = map2(extended_test_yoy_growth, 
                                       extended_cv_fcs_yoy_growth,
-                                      ~ map2(.x, .y, ~ .x - .y))
+                                      ~ map2(.x, .y, ~ .x - .y)),
+         cv_errors_yoy = map(extended_cv_error_yoy, 
+                            ~ map(., ~ subset(., 
+                                              start = length(.) - h_max + 1)))
   )
 
-cv_objects <- add_column_cv_yoy_errors(cv_objects)
+# cv_objects <- add_column_cv_yoy_errors(cv_objects)
 
 with_rmses <- get_rmse_var_table_at_each_h_diff_yoy(data = cv_objects) %>% 
   mutate(model_type = "VAR")
@@ -184,6 +188,8 @@ model_and_ave_rmse_r <- rbind(just_model_and_ave_rmse_1,
                               just_model_and_ave_rmse_2) %>% 
   arrange(accu_yoy)
 
+
+
 ########## RMSE at each H
 each_h_just_model_and_ave_rmse_var <- with_rmses %>% 
   mutate(lags = unlist(lags)) %>% 
@@ -191,7 +197,7 @@ each_h_just_model_and_ave_rmse_var <- with_rmses %>%
   select(-yoy_ranking)
 
 
-h_max = 6
+
 
 each_h_just_model_and_ave_rmse_var <- as_tibble(each_h_just_model_and_ave_rmse_var) %>% 
   mutate(estimated_obj = map2(variables, lags,  ~ vars::VAR(y = diff_yoy_data_ts[, .x], p = .y)),
@@ -208,9 +214,11 @@ each_h_just_model_and_ave_rmse_sarimax <- rmse_yoy_sarimax %>%
          rmse_5 = yoy_rmse_5, rmse_6 = yoy_rmse_6, lags = lag)
 
 
+# for peru   filter(variables != "expec_demand") %>%
+
+
 each_h_just_model_and_ave_rmse_sarimax_0 <- as_tibble(each_h_just_model_and_ave_rmse_sarimax) %>% 
   filter(variables != "rgdp") %>% 
-  filter(variables != "expec_demand") %>%
   filter(lags == 0) %>%   
   mutate(estimated_obj = pmap(list(variables, lags, arima_order, arima_seasonal), 
                                  ~ my_arimax(y_ts = level_data_ts[, "rgdp"], 
@@ -242,9 +250,11 @@ arimax_fc <- function(arima_obj, xvariables, lags, extended_x, h) {
   return(fc)
 }
 
+# for Peru   filter(variables != "expec_demand") %>%
+
+
 each_h_just_model_and_ave_rmse_sarimax_12 <- as_tibble(each_h_just_model_and_ave_rmse_sarimax) %>% 
   filter(variables != "rgdp") %>% 
-  filter(variables != "expec_demand") %>%
   filter(lags != 0) %>%   
   mutate(estimated_obj = pmap(list(variables, lags, arima_order, arima_seasonal), 
                                  ~ my_arimax(y_ts = level_data_ts[, "rgdp"], 
@@ -271,7 +281,22 @@ each_h_model_and_ave_rmse_sarimax_012 <- rbind(
 
 
 each_h_model_and_ave_rmse_r <- rbind(
-  each_h_just_model_and_ave_rmse_var %>%  select(-c(var_roots, all_stable)),
+  each_h_just_model_and_ave_rmse_var %>%  
+    select(-c(var_roots, all_stable, proper_level_test_data, proper_level_fcs,
+              extended_test_lev, extended_cv_fcs_lev, cv_errors_proper_levels,
+              extended_test_yoy_growth, extended_cv_fcs_yoy_growth, 
+              extended_cv_error_yoy)
+           ),
+  each_h_model_and_ave_rmse_sarimax_012)
+
+
+each_h_model_and_ave_rmse_stata <- rbind(
+  each_h_just_model_and_ave_rmse_var %>%  
+    select(-c(var_roots, all_stable, proper_level_test_data, proper_level_fcs,
+              extended_test_lev, extended_cv_fcs_lev, cv_errors_proper_levels,
+              extended_test_yoy_growth, extended_cv_fcs_yoy_growth, 
+              extended_cv_error_yoy)
+    ),
   each_h_model_and_ave_rmse_sarimax_012)
 
 
